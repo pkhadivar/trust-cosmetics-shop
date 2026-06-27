@@ -1,8 +1,17 @@
+"use client";
+
 import Image from "next/image";
 import { Plus } from "lucide-react";
+import { useDispatch } from "react-redux";
 import type { Product } from "@/lib/products";
+import { addToCart } from "@/store/cartSlice";
 
 export function ProductCard({ product }: { product: Product }) {
+  const dispatch = useDispatch();
+
+  function handleAddToCart() {
+    dispatch(addToCart({ product, quantity: 1 }));
+  }
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-3xl border border-border bg-card transition-all duration-300 hover:border-gold/50 hover:shadow-[0_0_50px_-15px_rgba(212,175,55,0.45)]">
       {product.tag && (
@@ -33,6 +42,8 @@ export function ProductCard({ product }: { product: Product }) {
           </div>
 
           <button
+            type="button"
+            onClick={handleAddToCart}
             className="flex items-center gap-1.5 rounded-xl bg-secondary px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-gold hover:text-primary-foreground"
             aria-label={`افزودن ${product.name} به سبد خرید`}
           >
