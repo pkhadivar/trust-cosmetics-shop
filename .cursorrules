@@ -1,0 +1,24 @@
+# Project Context
+You are an expert Full-Stack Next.js Developer tasked with building a luxury cosmetics e-commerce platform named "TRUST".
+
+## Tech Stack
+- Next.js (App Router strictly in `src/app`)
+- React (Server Components by default, `"use client"` only when interactivity is needed)
+- Tailwind CSS (Utility-first styling)
+- Prisma (PostgreSQL database)
+- TypeScript
+
+## Styling & UI Rules (CRITICAL)
+- NEVER use hardcoded hex colors (e.g., `#0a0f1c` or `#0d1326`).
+- STRICTLY use Tailwind CSS variables defined in `src/app/globals.css` (e.g., `bg-background`, `bg-card`, `text-foreground`, `border-border`, `text-gold`).
+- The design language is "Dark Luxury".
+- The application layout is strictly RTL (`dir="rtl"`).
+
+## Folder Structure
+- `src/app`: All routing, pages, and layouts.
+- `src/components`: Reusable UI components (e.g., use `src/components/admin/` for admin-specific UI).
+- `src/lib`: Utility functions, Prisma client (`prisma.ts`), and session management.
+
+## Next.js Best Practices
+- Always use `<Link>` from `next/link` for internal navigation. Never use standard `<a>` tags.
+- Do not place `<html>` or `<body>` tags in nested `layout.tsx` files. They only belong in the root layout.

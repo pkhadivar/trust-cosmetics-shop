@@ -70,19 +70,21 @@ model Category {
 }
 
 model Product {
-  id           String      @id @default(cuid())
-  title        String
-  slug         String      @unique
-  description  String
-  price        Int
-  stock        Int
-  images       String[]
-  isAvailable  Boolean     @default(true)
-  categoryId   String
-  category     Category    @relation(fields: [categoryId], references: [id])
-  orderItems   OrderItem[]
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  id            String      @id @default(cuid())
+  title         String
+  slug          String      @unique
+  subtitle      String?     // اضافه شد: برای متن کوتاه زیر عنوان در کارت‌ها
+  description   String      // برای توضیحات کامل در صفحه داخلی محصول
+  price         Int
+  stock         Int
+  images        String[]
+  badge         String?     // اضافه شد: برای تگ‌های زرد رنگ مثل "جدید" یا "پرفروش"
+  isAvailable   Boolean     @default(true)
+  categoryId    String
+  category      Category    @relation(fields: [categoryId], references: [id])
+  orderItems    OrderItem[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 }
 
 model Order {
