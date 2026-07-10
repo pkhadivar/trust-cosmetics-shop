@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { Plus } from "lucide-react";
 import { useDispatch } from "react-redux";
 import { addToCart, type CartProduct } from "@/store/cartSlice";
@@ -38,27 +39,32 @@ export function ProductCard({ product }: { product: CartProduct }) {
       
       {/* نمایش برچسب تخفیف یا برچسب ویژه دیتابیس (badge) */}
       {discountPercent > 0 ? (
-        <span className="absolute end-4 top-4 z-10 rounded-full bg-red-600 px-3 py-1 text-xs font-semibold text-white">
+        <span className="pointer-events-none absolute end-4 top-4 z-10 rounded-full bg-red-600 px-3 py-1 text-xs font-semibold text-white">
           {discountPercent}% تخفیف
         </span>
       ) : product.badge ? (
-        <span className="absolute end-4 top-4 z-10 rounded-full bg-gold px-3 py-1 text-xs font-semibold text-primary-foreground">
+        <span className="pointer-events-none absolute end-4 top-4 z-10 rounded-full bg-gold px-3 py-1 text-xs font-semibold text-primary-foreground">
           {product.badge}
         </span>
       ) : null}
 
-      <div className="relative aspect-square overflow-hidden bg-secondary/40">
+      {/* بخش تصویر: تبدیل به لینک برای هدایت به صفحه جزئیات */}
+      <Link href={`/products/${product.id}`} className="relative block aspect-square overflow-hidden bg-secondary/40">
         <Image
           src={displayImage} // هماهنگ شده با فیلد دیتابیس
-          alt={'product image'} // هماهنگ شده با فیلد دیتابیس
+          alt={product.title} // سئوی بهتر با قرار دادن نام محصول
           fill
           className="object-contain p-6 transition-transform duration-500 group-hover:scale-110"
         />
-      </div>
+      </Link>
 
       <div className="flex flex-1 flex-col p-5">
-        <h3 className="text-base font-semibold">{product.title}</h3>
-        <p className="mt-1 text-sm leading-relaxed text-muted-foreground min-h-[40px]">
+        {/* عنوان محصول: تبدیل به لینک */}
+        <Link href={`/products/${product.id}`} className="inline-block w-fit transition-colors hover:text-gold">
+          <h3 className="text-base font-semibold line-clamp-1">{product.title}</h3>
+        </Link>
+        
+        <p className="mt-1 text-sm leading-relaxed text-muted-foreground min-h-[40px] line-clamp-2">
           {product.subtitle || ""}
         </p>
 
@@ -82,7 +88,7 @@ export function ProductCard({ product }: { product: CartProduct }) {
           <button
             type="button"
             onClick={handleAddToCart}
-            className="flex items-center gap-1.5 rounded-xl bg-secondary px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-gold hover:text-primary-foreground"
+            className="relative z-10 flex items-center gap-1.5 rounded-xl bg-secondary px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-gold hover:text-primary-foreground"
             aria-label={`افزودن ${product.title} به سبد خرید`}
           >
             <Plus className="size-4" />
