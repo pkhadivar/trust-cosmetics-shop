@@ -80,15 +80,22 @@ model Product {
   discountedPrice Int? // قیمت نهایی (اگر تخفیف دارد)
   stock         Int
   images        String[]
-  badge         String?     // اضافه شد: برای تگ‌های زرد رنگ مثل "جدید" یا "پرفروش"
   isAvailable   Boolean     @default(true)
+  isFeatured      Boolean  @default(false) // <--- اضافه شد: برای بخش محصولات منتخب لندینگ
   categoryId    String
   category      Category    @relation(fields: [categoryId], references: [id])
+  tags            Tag[]
   orderItems    OrderItem[]
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 }
-
+model Tag {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  products  Product[] // ارتباط با محصولات
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
 model Order {
   id          String      @id @default(cuid())
   userId      String

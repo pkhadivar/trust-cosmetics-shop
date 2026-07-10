@@ -3,16 +3,33 @@ import { prisma } from "@/lib/prisma";
 import { ProductCard } from "@/components/product-card";
 
 export async function ProductShowcase() {
-  // ۱. دریافت ۶ محصول آخر از دیتابیس واقعی به جای فایل mock
-  const realProducts = await prisma.product.findMany({
+  // ۱. دریافت محصولات منتخب به همراه برچسب‌های (Tags) متصل به آن‌ها
+  const featuredProducts = await prisma.product.findMany({
     where: { 
-      isAvailable: true 
+      isAvailable: true,
+      isFeatured: true 
+    },
+    include: {
+      tags: true // <--- لود کردن تگ‌ها از دیتابیس
     },
     orderBy: { 
       createdAt: 'desc' 
     },
     take: 6 
   });
+
+  // ۲. تبدیل فرمت دیتای دیتابیس به فرمت تمیز مورد نیاز ProductCard و ریداکس
+  // نام اولین تگ محصول به عنوان برچسب (badge) روی کارت قرار می‌گیرد
+  const formattedProducts = featuredProducts.map((product) => ({
+    id: product.id,
+    title: product.title,
+    subtitle: product.subtitle,
+    price: product.price,
+    discountedPrice: product.discountedPrice,
+    images: product.images,
+    badge: product.tags?.[0]?.name || null, // حفظ برای پشتیبانی از ریداکس
+    tags: product.tags.map(t => t.name),    // <--- اضافه شد: پاس دادن تمام تگ‌ها به صورت آرایه
+  }));
 
   return (
     <section
@@ -32,12 +49,12 @@ export async function ProductShowcase() {
       </div>
 
       <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {realProducts.length === 0 ? (
+        {formattedProducts.length === 0 ? (
           <div className="col-span-full text-center py-20 text-muted-foreground bg-card/50 rounded-2xl border border-border">
-            در حال حاضر محصولی در فروشگاه موجود نیست.
+            در حال حاضر هیچ محصولی به عنوان محصول منتخب تنظیم نشده است.
           </div>
         ) : (
-          realProducts.map((product) => (
+          formattedProducts.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))
         )}

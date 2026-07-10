@@ -7,8 +7,7 @@ import { useDispatch } from "react-redux";
 import { addToCart, type CartProduct } from "@/store/cartSlice";
 import { calculateDiscount } from "@/utils/math"; 
 
-
-export function ProductCard({ product }: { product: CartProduct }) {
+export function ProductCard({ product }: { product: CartProduct & { tags?: string[] } }) {
   const dispatch = useDispatch();
   
   // محاسبه درصد تخفیف (در صورت وجود discountedPrice)
@@ -25,7 +24,7 @@ export function ProductCard({ product }: { product: CartProduct }) {
         price: product.price,
         discountedPrice: product.discountedPrice,
         images: product.images,
-        badge: product.badge,
+        badge: product.badge, 
       };
       
       dispatch(addToCart({ product: cleanProduct, quantity: 1 }));
@@ -37,16 +36,31 @@ export function ProductCard({ product }: { product: CartProduct }) {
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-3xl border border-border bg-card transition-all duration-300 hover:border-gold/50 hover:shadow-[0_0_50px_-15px_rgba(212,175,55,0.45)]">
       
-      {/* نمایش برچسب تخفیف یا برچسب ویژه دیتابیس (badge) */}
-      {discountPercent > 0 ? (
-        <span className="pointer-events-none absolute end-4 top-4 z-10 rounded-full bg-red-600 px-3 py-1 text-xs font-semibold text-white">
-          {discountPercent}% تخفیف
-        </span>
-      ) : product.badge ? (
-        <span className="pointer-events-none absolute end-4 top-4 z-10 rounded-full bg-gold px-3 py-1 text-xs font-semibold text-primary-foreground">
-          {product.badge}
-        </span>
-      ) : null}
+      {/* بخش نمایش برچسب‌ها (نمایش افقی کنار هم) */}
+      <div className="pointer-events-none absolute end-4 top-4 z-10 flex flex-wrap justify-end gap-1.5 max-w-[85%]">
+        
+        {/* برچسب تخفیف */}
+        {discountPercent > 0 && (
+          <span className="rounded-full bg-red-600 px-3 py-1 text-xs font-semibold text-white shadow-md">
+            {discountPercent}% تخفیف
+          </span>
+        )}
+        
+        {/* رندر کردن تمام تگ‌ها */}
+        {product.tags && product.tags.length > 0 ? (
+          product.tags.map((tag) => (
+            <span key={tag} className="rounded-full bg-gold px-3 py-1 text-xs font-semibold text-primary-foreground shadow-sm whitespace-nowrap">
+              {tag}
+            </span>
+          ))
+        ) : product.badge ? (
+          // در صورتی که تگ‌ها پاس داده نشده باشند اما badge وجود داشته باشد
+          <span className="rounded-full bg-gold px-3 py-1 text-xs font-semibold text-primary-foreground shadow-sm whitespace-nowrap">
+            {product.badge}
+          </span>
+        ) : null}
+
+      </div>
 
       {/* بخش تصویر: تبدیل به لینک برای هدایت به صفحه جزئیات */}
       <Link href={`/products/${product.id}`} className="relative block aspect-square overflow-hidden bg-secondary/40">
