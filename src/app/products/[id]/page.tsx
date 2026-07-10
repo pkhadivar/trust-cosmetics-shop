@@ -17,9 +17,13 @@ function formatPrice(amount: number): string {
 export default async function ProductDetailPage({ params }: ProductPageProps) {
   const { id } = await params;
 
+  // اضافه کردن tags: true به کوئری پریزما
   const product = await prisma.product.findUnique({
     where: { id },
-    include: { category: true }
+    include: { 
+      category: true,
+      tags: true 
+    }
   });
 
   if (!product) notFound();
@@ -31,7 +35,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
     ? product.description.split('\n').filter(line => line.trim().length > 0)
     : [];
 
-  // ساخت آبجکت تمیز برای Redux
+  // ساخت آبجکت تمیز برای Redux همراه با تگ‌ها
   const cleanProductForCart = {
     id: product.id,
     title: product.title,
@@ -39,7 +43,8 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
     price: product.price,
     discountedPrice: product.discountedPrice,
     images: product.images,
-    badge: product.badge,
+    badge: product.tags?.[0]?.name || null, // استفاده از اولین تگ به جای فیلد حذف شده badge
+    tags: product.tags?.map(t => t.name) || [], // ارسال تگ‌ها به صورت آرایه
   };
 
   return (
@@ -60,12 +65,14 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
               <span className="text-xs font-semibold text-gold bg-gold/10 px-3 py-1 rounded-full border border-gold/20">
                 {product.category.name}
               </span>
-              {product.badge && (
-                <span className="text-xs font-medium text-[#0a0f1c] bg-gold px-2.5 py-1 rounded-md flex items-center gap-1">
+              
+              {/* رندر کردن تمام برچسب‌های متصل به محصول */}
+              {product.tags && product.tags.length > 0 && product.tags.map((tag) => (
+                <span key={tag.id} className="text-xs font-medium text-[#0a0f1c] bg-gold px-2.5 py-1 rounded-md flex items-center gap-1 shadow-sm">
                   <Sparkles className="size-3" />
-                  {product.badge}
+                  {tag.name}
                 </span>
-              )}
+              ))}
             </div>
 
             <h1 className="mt-5 text-3xl font-bold text-foreground leading-tight sm:text-4xl">
@@ -108,7 +115,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
             </div>
 
             {/* دکمه ادد تو کارت متصل به Redux */}
-            <AddToCartAction product={cleanProductForCart} />
+            <AddToCartAction product={cleanProductForCart as any} />
 
             {/* مزایای رقابتی */}
             <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-2xl border border-border/40 bg-secondary/20 p-4">
