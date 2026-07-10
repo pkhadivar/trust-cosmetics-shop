@@ -1,18 +1,14 @@
+// src/components/site-navbar.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useDispatch, useSelector } from "react-redux";
 import { ChevronDown, Menu, Search, ShoppingBag, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  CATEGORIES,
-  getCategoryHref,
-  getSubcategoryHref,
-  type CategorySlug,
-} from "@/lib/categories";
 import { selectCartItemCount, toggleCartDrawer } from "@/store/cartSlice";
 import type { RootState } from "@/store/store";
+import { getNavbarCategoriesAction } from "@/actions/category"; // فراخوانی اکشن سروری
 
 const navItems = [
   { label: "خانه", href: "/" },
@@ -20,19 +16,27 @@ const navItems = [
   { label: "درباره ما", href: "/#features" },
 ];
 
-const categoryEntries = Object.entries(CATEGORIES) as [
-  CategorySlug,
-  (typeof CATEGORIES)[CategorySlug],
-][];
-
 export function SiteNavbar() {
   const dispatch = useDispatch();
   const [menuOpen, setMenuOpen] = useState(false);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(false);
+  
+  // استیت برای نگهداری دسته‌بندی‌های دیتابیس
+  const [dbCategories, setDbCategories] = useState<any[]>([]);
+
   const cartItemCount = useSelector((state: RootState) =>
     selectCartItemCount(state),
   );
+
+  // دریافت امن اطلاعات از دیتابیس در سمت کلاینت
+  useEffect(() => {
+    async function fetchCategories() {
+      const cats = await getNavbarCategoriesAction();
+      setDbCategories(cats);
+    }
+    fetchCategories();
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
@@ -82,30 +86,32 @@ export function SiteNavbar() {
               <div className="absolute right-0 top-full z-50 pt-4">
                 <div className="w-[min(90vw,56rem)] rounded-3xl border border-border bg-card p-6 shadow-[0_24px_80px_-20px_rgba(11,17,32,0.85)]">
                   <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {categoryEntries.map(([slug, category]) => (
-                    <div key={slug}>
-                      <Link
-                        href={getCategoryHref(slug)}
-                        className="text-sm font-semibold text-foreground transition-colors hover:text-gold"
-                      >
-                        {category.label}
-                      </Link>
-                      <ul className="mt-3 space-y-2">
-                        {Object.entries(category.subcategories).map(
-                          ([subSlug, subLabel]) => (
-                            <li key={subSlug}>
-                              <Link
-                                href={getSubcategoryHref(slug, subSlug)}
-                                className="text-sm text-muted-foreground transition-colors hover:text-gold"
-                              >
-                                {subLabel}
-                              </Link>
-                            </li>
-                          ),
+                    {dbCategories.map((category) => (
+                      <div key={category.id}>
+                        <Link
+                          href={`/categories/${category.slug}`}
+                          className="text-sm font-semibold text-foreground transition-colors hover:text-gold"
+                          onClick={() => setCategoriesOpen(false)}
+                        >
+                          {category.name}
+                        </Link>
+                        {category.children && category.children.length > 0 && (
+                          <ul className="mt-3 space-y-2">
+                            {category.children.map((child: any) => (
+                              <li key={child.id}>
+                                <Link
+                                  href={`/categories/${child.slug}`}
+                                  className="text-sm text-muted-foreground transition-colors hover:text-gold"
+                                  onClick={() => setCategoriesOpen(false)}
+                                >
+                                  {child.name}
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
                         )}
-                      </ul>
-                    </div>
-                  ))}
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -177,30 +183,30 @@ export function SiteNavbar() {
 
             {mobileCategoriesOpen && (
               <div className="space-y-4 rounded-2xl border border-border bg-card p-4">
-                {categoryEntries.map(([slug, category]) => (
-                  <div key={slug}>
+                {dbCategories.map((category) => (
+                  <div key={category.id}>
                     <Link
-                      href={getCategoryHref(slug)}
+                      href={`/categories/${category.slug}`}
                       className="text-sm font-semibold text-foreground transition-colors hover:text-gold"
                       onClick={() => setMenuOpen(false)}
                     >
-                      {category.label}
+                      {category.name}
                     </Link>
-                    <ul className="mt-2 space-y-1.5 ps-3">
-                      {Object.entries(category.subcategories).map(
-                        ([subSlug, subLabel]) => (
-                          <li key={subSlug}>
+                    {category.children && category.children.length > 0 && (
+                      <ul className="mt-2 space-y-1.5 ps-3">
+                        {category.children.map((child: any) => (
+                          <li key={child.id}>
                             <Link
-                              href={getSubcategoryHref(slug, subSlug)}
+                              href={`/categories/${child.slug}`}
                               className="text-sm text-muted-foreground transition-colors hover:text-gold"
                               onClick={() => setMenuOpen(false)}
                             >
-                              {subLabel}
+                              {child.name}
                             </Link>
                           </li>
-                        ),
-                      )}
-                    </ul>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 ))}
               </div>

@@ -63,6 +63,7 @@ model Category {
   id        String     @id @default(cuid())
   name      String
   slug      String     @unique
+  imageUrl  String?
   parentId  String?
   parent    Category?  @relation("Subcategories", fields: [parentId], references: [id])
   children  Category[] @relation("Subcategories")
@@ -76,6 +77,7 @@ model Product {
   subtitle      String?     // اضافه شد: برای متن کوتاه زیر عنوان در کارت‌ها
   description   String      // برای توضیحات کامل در صفحه داخلی محصول
   price         Int
+  discountedPrice Int? // قیمت نهایی (اگر تخفیف دارد)
   stock         Int
   images        String[]
   badge         String?     // اضافه شد: برای تگ‌های زرد رنگ مثل "جدید" یا "پرفروش"

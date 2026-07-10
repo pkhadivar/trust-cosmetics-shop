@@ -96,9 +96,10 @@ export function CartDrawer() {
                   className="flex gap-4 rounded-2xl border border-border bg-background/60 p-3"
                 >
                   <div className="relative size-20 shrink-0 overflow-hidden rounded-xl bg-secondary/40">
+                    {/* اصلاح مسیر تصویر به آرایه دیتابیس واقعی */}
                     <Image
-                      src={product.image}
-                      alt={product.name}
+                      src={product.images?.[0] || "/placeholder.jpg"}
+                      alt={product.title}
                       fill
                       className="object-contain p-2"
                     />
@@ -107,8 +108,9 @@ export function CartDrawer() {
                   <div className="flex min-w-0 flex-1 flex-col">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
+                        {/* اصلاح نام فیلد محصول به عنوان واقعی دیتابیس */}
                         <h3 className="truncate text-sm font-semibold">
-                          {product.name}
+                          {product.title}
                         </h3>
                         <p className="mt-0.5 truncate text-xs text-muted-foreground">
                           {product.subtitle}
@@ -117,7 +119,7 @@ export function CartDrawer() {
                       <button
                         type="button"
                         className="shrink-0 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                        aria-label={`حذف ${product.name} از سبد خرید`}
+                        aria-label={`حذف ${product.title} از سبد خرید`}
                         onClick={() => dispatch(removeFromCart(product.id))}
                       >
                         <Trash2 className="size-4" />
@@ -161,8 +163,9 @@ export function CartDrawer() {
                         </button>
                       </div>
 
+                      {/* نمایش قیمت محاسبه شده بر اساس قیمت اصلی یا تخفیف خورده محصول */}
                       <span className="text-sm font-bold text-gold">
-                        {formatPrice(product.price * quantity)}
+                        {formatPrice((product.discountedPrice ?? product.price) * quantity)}
                       </span>
                     </div>
                   </div>

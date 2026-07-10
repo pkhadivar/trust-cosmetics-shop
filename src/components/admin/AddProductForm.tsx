@@ -68,7 +68,18 @@ export default function AddProductForm({ categories }: { categories: Category[] 
             <option value="false">فعلاً ناموجود</option>
           </select>
         </div>
-
+{/* این بخش را جایگزین فیلد تخفیف فعلی کنید */}
+      <div>
+          <label htmlFor="discountedPrice" className="block text-slate-400 mb-2 text-sm">قیمت با تخفیف (اختیاری)</label>
+          <input 
+            type="number" 
+            id="discountedPrice" 
+            name="discountedPrice" 
+            placeholder="اگر تخفیف ندارد، خالی بگذارید" 
+            className="w-full bg-background border border-border rounded-xl p-3 text-foreground focus:border-gold focus:outline-none transition-colors text-left" 
+            dir="ltr"
+          />
+        </div>
         <div>
           <label htmlFor="categoryId" className="block text-slate-400 mb-2 text-sm">دسته‌بندی *</label>
           <select id="categoryId" name="categoryId" required 

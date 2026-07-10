@@ -1,8 +1,18 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import type { Product } from "@/lib/products";
+
+// ۱. تعریف تایپ یکپارچه و واقعی بر اساس محصولات جدید دیتابیس
+export interface CartProduct {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  price: number;
+  discountedPrice: number | null;
+  images: string[];
+  badge: string | null;
+}
 
 export interface CartItem {
-  product: Product;
+  product: CartProduct; // استفاده از تایپ جدید
   quantity: number;
 }
 
@@ -22,7 +32,7 @@ const cartSlice = createSlice({
   reducers: {
     addToCart: (
       state,
-      action: PayloadAction<{ product: Product; quantity?: number }>,
+      action: PayloadAction<{ product: CartProduct; quantity?: number }>,
     ) => {
       const { product, quantity = 1 } = action.payload;
       const existing = state.items.find(
@@ -91,11 +101,12 @@ export const selectCartItems = (state: { cart: CartState }) => state.cart.items;
 export const selectCartItemCount = (state: { cart: CartState }) =>
   state.cart.items.reduce((total, item) => total + item.quantity, 0);
 
+// ۲. محاسبه توتال بر اساس قیمت با تخفیف (در صورت وجود) یا قیمت اصلی
 export const selectCartTotal = (state: { cart: CartState }) =>
-  state.cart.items.reduce(
-    (total, item) => total + item.product.price * item.quantity,
-    0,
-  );
+  state.cart.items.reduce((total, item) => {
+    const activePrice = item.product.discountedPrice ?? item.product.price;
+    return total + activePrice * item.quantity;
+  }, 0);
 
 export const selectIsCartDrawerOpen = (state: { cart: CartState }) =>
   state.cart.isDrawerOpen;

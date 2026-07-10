@@ -50,78 +50,94 @@ export default function CartPage() {
         ) : (
           <div className="mt-14 space-y-8">
             <ul className="space-y-4">
-              {items.map(({ product, quantity }) => (
-                <li
-                  key={product.id}
-                  className="flex flex-col gap-4 rounded-3xl border border-border bg-card p-5 sm:flex-row sm:items-center"
-                >
-                  <div className="relative mx-auto size-28 shrink-0 overflow-hidden rounded-2xl bg-secondary/40 sm:mx-0">
-                    <Image
-                      src={product.image}
-                      alt={product.name}
-                      fill
-                      className="object-contain p-3"
-                    />
-                  </div>
+              {items.map(({ product, quantity }) => {
+                // تعیین قیمت فعال (با احتساب تخفیف در صورت وجود)
+                const activePrice = product.discountedPrice ?? product.price;
 
-                  <div className="min-w-0 flex-1 text-center sm:text-start">
-                    <h2 className="text-lg font-semibold">{product.name}</h2>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {product.subtitle}
-                    </p>
-                    <p className="mt-2 text-sm font-bold text-gold">
-                      {formatPrice(product.price)}
-                    </p>
-                  </div>
-
-                  <div className="flex flex-col items-center gap-3 sm:items-end">
-                    <div className="inline-flex items-center rounded-xl border border-border bg-secondary/60">
-                      <button
-                        type="button"
-                        className="flex size-9 items-center justify-center rounded-s-xl transition-colors hover:bg-gold hover:text-primary-foreground"
-                        aria-label="کاهش تعداد"
-                        onClick={() =>
-                          dispatch(
-                            updateQuantity({
-                              productId: product.id,
-                              quantity: quantity - 1,
-                            }),
-                          )
-                        }
-                      >
-                        <Minus className="size-4" />
-                      </button>
-                      <span className="min-w-10 text-center text-sm font-medium">
-                        {quantity.toLocaleString("fa-IR")}
-                      </span>
-                      <button
-                        type="button"
-                        className="flex size-9 items-center justify-center rounded-e-xl transition-colors hover:bg-gold hover:text-primary-foreground"
-                        aria-label="افزایش تعداد"
-                        onClick={() =>
-                          dispatch(
-                            updateQuantity({
-                              productId: product.id,
-                              quantity: quantity + 1,
-                            }),
-                          )
-                        }
-                      >
-                        <Plus className="size-4" />
-                      </button>
+                return (
+                  <li
+                    key={product.id}
+                    className="flex flex-col gap-4 rounded-3xl border border-border bg-card p-5 sm:flex-row sm:items-center"
+                  >
+                    <div className="relative mx-auto size-28 shrink-0 overflow-hidden rounded-2xl bg-secondary/40 sm:mx-0">
+                      {/* اصلاح مسیر تصویر به آرایه دیتابیس واقعی */}
+                      <Image
+                        src={product.images?.[0] || "/placeholder.jpg"}
+                        alt={product.title}
+                        fill
+                        className="object-contain p-3"
+                      />
                     </div>
 
-                    <button
-                      type="button"
-                      className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-destructive"
-                      onClick={() => dispatch(removeFromCart(product.id))}
-                    >
-                      <Trash2 className="size-3.5" />
-                      حذف
-                    </button>
-                  </div>
-                </li>
-              ))}
+                    <div className="min-w-0 flex-1 text-center sm:text-start">
+                      {/* اصلاح فیلد نام به عنوان واقعی دیتابیس */}
+                      <h2 className="text-lg font-semibold">{product.title}</h2>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {product.subtitle}
+                      </p>
+                      
+                      {/* نمایش قیمت خط‌خورده در صورت وجود تخفیف */}
+                      <div className="mt-2 flex flex-col sm:items-start gap-0.5">
+                        {product.discountedPrice && (
+                          <span className="text-xs text-muted-foreground line-through">
+                            {formatPrice(product.price)}
+                          </span>
+                        )}
+                        <span className="text-sm font-bold text-gold">
+                          {formatPrice(activePrice)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-center gap-3 sm:items-end">
+                      <div className="inline-flex items-center rounded-xl border border-border bg-secondary/60">
+                        <button
+                          type="button"
+                          className="flex size-9 items-center justify-center rounded-s-xl transition-colors hover:bg-gold hover:text-primary-foreground"
+                          aria-label="کاهش تعداد"
+                          onClick={() =>
+                            dispatch(
+                              updateQuantity({
+                                productId: product.id,
+                                quantity: quantity - 1,
+                              }),
+                            )
+                          }
+                        >
+                          <Minus className="size-4" />
+                        </button>
+                        <span className="min-w-10 text-center text-sm font-medium">
+                          {quantity.toLocaleString("fa-IR")}
+                        </span>
+                        <button
+                          type="button"
+                          className="flex size-9 items-center justify-center rounded-e-xl transition-colors hover:bg-gold hover:text-primary-foreground"
+                          aria-label="افزایش تعداد"
+                          onClick={() =>
+                            dispatch(
+                              updateQuantity({
+                                productId: product.id,
+                                quantity: quantity + 1,
+                              }),
+                            )
+                          }
+                        >
+                          <Plus className="size-4" />
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-destructive"
+                        onClick={() => dispatch(removeFromCart(product.id))}
+                      >
+                        <Trash2 className="size-3.5" />
+                        حذف
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
 
             <div className="rounded-3xl border border-gold/30 bg-card p-6">
@@ -132,7 +148,7 @@ export default function CartPage() {
                 </span>
               </div>
               <Button
-                className="mt-5 h-12 w-full bg-gold text-sm font-semibold text-primary-foreground hover:bg-gold-soft"
+                className="mt-5 h-12 w-full bg-gold text-sm font-semibold text-primary-foreground hover:bg-gold-soft transition-colors"
                 onClick={() => dispatch(clearCart())}
               >
                 پرداخت (نمایشی)

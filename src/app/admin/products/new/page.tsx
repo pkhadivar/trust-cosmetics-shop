@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import AddProductForm from '@/components/admin/AddProductForm';
+import ProductForm from '@/components/admin/ProductForm'; // <-- تغییر مهم: ایمپورت فرم جدید
 import { prisma } from '@/lib/prisma';
 
 export default async function NewProductPage() {
@@ -20,7 +20,8 @@ export default async function NewProductPage() {
         <h1 className="text-3xl font-bold text-foreground mr-4">افزودن محصول جدید</h1>
       </div>
 
-      <AddProductForm categories={categories} />
+      {/* <-- تغییر مهم: استفاده از فرم جدید و هوشمند */}
+      <ProductForm categories={categories} />
     </div>
   );
 }

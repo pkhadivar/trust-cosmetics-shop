@@ -1,34 +1,17 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import {
-  CATEGORIES,
-  getCategoryHref,
-  type CategorySlug,
-} from "@/lib/categories";
-import { mockProducts } from "@/lib/products";
+import { prisma } from "@/lib/prisma";
 
-const categoryEntries = Object.entries(CATEGORIES) as [
-  CategorySlug,
-  (typeof CATEGORIES)[CategorySlug],
-][];
+export async function CategoriesSection() {
+  const dbCategories = await prisma.category.findMany({
+    where: { parentId: null },
+    include: {
+      _count: { select: { products: true } },
+      children: true 
+    },
+    orderBy: { name: 'asc' }
+  });
 
-function getProductCount(category: CategorySlug): number {
-  return mockProducts.filter((product) => product.category === category).length;
-}
-
-function getSubcategorySummary(category: CategorySlug): string {
-  const subcategories = CATEGORIES[category].subcategories;
-  const labels = Object.values(subcategories).slice(0, 3);
-  const remaining = Object.keys(subcategories).length - labels.length;
-
-  if (remaining > 0) {
-    return `${labels.join("، ")} و ${remaining.toLocaleString("fa-IR")} مورد دیگر`;
-  }
-
-  return labels.join("، ");
-}
-
-export function CategoriesSection() {
   return (
     <section id="categories" className="bg-secondary/40 py-16 lg:py-24">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
@@ -37,7 +20,7 @@ export function CategoriesSection() {
             <span className="text-sm font-medium text-gold">
               دسته‌بندی هوشمند
             </span>
-            <h2 className="mt-3 text-balance text-3xl font-bold sm:text-4xl">
+            <h2 className="mt-3 text-balance text-3xl font-bold sm:text-4xl text-foreground">
               محصول مناسب خود را پیدا کنید
             </h2>
           </div>
@@ -50,45 +33,63 @@ export function CategoriesSection() {
         </div>
 
         <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {categoryEntries.map(([slug, category]) => {
-            const productCount = getProductCount(slug);
-            const subcategoryCount = Object.keys(category.subcategories).length;
+          {dbCategories.map((category) => {
+            const productCount = category._count.products;
+            const subLabels = category.children.map(c => c.name).slice(0, 3).join("، ");
+            const remaining = category.children.length - 3;
+            const description = remaining > 0 
+              ? `${subLabels} و ${remaining.toLocaleString("fa-IR")} مورد دیگر` 
+              : subLabels;
 
             return (
               <Link
-                key={slug}
-                href={getCategoryHref(slug)}
-                className="group relative aspect-[16/10] overflow-hidden rounded-3xl border border-border"
+                key={category.id}
+                href={`/categories/${category.slug}`}
+                className="group relative aspect-[16/10] overflow-hidden rounded-3xl border border-border bg-[#0B1120] transition-shadow hover:shadow-[0_0_30px_-10px_rgba(212,175,55,0.2)]"
               >
+                {/* تنظیمات هوشمند عکس: 
+                  - backgroundPosition: 'left center' باعث می‌شود سوژه در سمت چپ کارت قرار بگیرد 
+                  و زیر متن‌ها پنهان نشود.
+                */}
                 <div
-                  className="absolute inset-0 transition-transform duration-700 group-hover:scale-105"
+                  className="absolute inset-0 transition-transform duration-700 group-hover:scale-105 bg-no-repeat"
                   style={{
-                    background:
-                      "linear-gradient(135deg, rgba(24,34,58,1) 0%, rgba(11,17,32,1) 45%, rgba(212,175,55,0.18) 100%)",
+                    backgroundImage: category.imageUrl ? `url(${category.imageUrl})` : 'none',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'left center',
                   }}
                   aria-hidden
                 />
+                
+                {/* گرادینت طلایی ما:
+                  - در 15% سمت راست: کاملاً تاریک و سالید (rgba(11,17,32,1))
+                  - در 50% مرکز: شروع به محو شدن
+                  - در 90% به بعد (سمت چپ تصویر): کاملاً شفاف (transparent) 
+                  تا عکس هیچ افت کیفیت و کدری نداشته باشد.
+                */}
                 <div
                   className="absolute inset-0"
                   style={{
-                    background:
-                      "linear-gradient(to top, rgba(11,17,32,0.95), rgba(11,17,32,0.35) 55%, transparent)",
+                    background: "linear-gradient(to left, rgba(11,17,32,1) 15%, rgba(11,17,32,0.85) 50%, transparent 95%)",
                   }}
                   aria-hidden
                 />
-                <div className="absolute inset-x-0 bottom-0 p-7">
-                  <span className="text-xs text-gold">
-                    {productCount > 0
-                      ? `${productCount.toLocaleString("fa-IR")} محصول`
-                      : `${subcategoryCount.toLocaleString("fa-IR")} زیردسته`}
+
+                {/* بخش متن: 
+                  با w-[75%] عرض متن را محدود کردیم تا روی بخش شفافِ عکس در سمت چپ نیاید. 
+                */}
+                <div className="absolute inset-0 p-7 z-10 flex flex-col justify-center w-[75%]">
+                  <span className="text-xs text-gold font-medium mb-1.5">
+                    {productCount.toLocaleString("fa-IR")} محصول
                   </span>
-                  <h3 className="mt-1 text-2xl font-bold text-foreground">
-                    {category.label}
+                  <h3 className="text-2xl font-bold text-foreground transition-colors group-hover:text-gold">
+                    {category.name}
                   </h3>
-                  <p className="mt-2 max-w-xs text-sm leading-relaxed text-muted-foreground">
-                    {getSubcategorySummary(slug)}
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground/90 line-clamp-2">
+                    {description || "مشاهده محصولات این دسته"}
                   </p>
-                  <span className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-gold">
+                  
+                  <span className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-gold">
                     مشاهده محصولات
                     <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-1" />
                   </span>
