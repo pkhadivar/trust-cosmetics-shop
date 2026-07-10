@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import React from 'react';
+import { Toaster } from 'react-hot-toast';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    // لیوت تودرتو فقط از یک div ریشه شروع می‌شود، نه html!
     <div className="flex min-h-screen bg-background text-foreground" dir="rtl">
       
       {/* سایدبار ثابت */}
@@ -41,6 +41,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <main className="flex-1 p-6 md:p-10 overflow-y-auto">
         {children}
       </main>
+
+      {/* تنظیم Toaster با متغیرهای دینامیک CSS */}
+      <Toaster 
+        position="bottom-left" 
+        toastOptions={{
+          style: { 
+            background: 'var(--card)', 
+            color: 'var(--foreground)', 
+            border: '1px solid var(--border)',
+            fontFamily: 'inherit'
+          }
+        }} 
+      />
       
     </div>
   );

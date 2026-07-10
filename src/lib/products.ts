@@ -5,6 +5,7 @@ export type Product = {
   name: string;
   subtitle: string;
   price: number;
+  discountedPrice?: number | null; // این خط را اضافه کنید
   formattedPrice: string;
   image: string;
   tag?: string;
