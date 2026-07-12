@@ -12,7 +12,7 @@ import { getNavbarCategoriesAction } from "@/actions/category"; // فراخوا�
 
 const navItems = [
   { label: "خانه", href: "/" },
-  { label: "محصولات", href: "/#products" },
+  { label: "محصولات", href: "/shop" },
   { label: "درباره ما", href: "/#features" },
 ];
 

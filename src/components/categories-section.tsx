@@ -44,7 +44,7 @@ export async function CategoriesSection() {
             return (
               <Link
                 key={category.id}
-                href={`/categories/${category.slug}`}
+                href={`/shop?category=${category.id}`}
                 className="group relative aspect-[16/10] overflow-hidden rounded-3xl border border-border bg-[#0B1120] transition-shadow hover:shadow-[0_0_30px_-10px_rgba(212,175,55,0.2)]"
               >
                 {/* تنظیمات هوشمند عکس: 
