@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useDispatch, useSelector } from "react-redux";
-import { ChevronDown, Menu, Search, ShoppingBag, X } from "lucide-react";
+import { ChevronDown, Menu, Search, ShoppingBag, X, User } from "lucide-react"; // آیکون User اضافه شد
 import { Button } from "@/components/ui/button";
 import { selectCartItemCount, toggleCartDrawer } from "@/store/cartSlice";
 import type { RootState } from "@/store/store";
@@ -128,6 +128,19 @@ export function SiteNavbar() {
           >
             <Search className="size-5" />
           </Button>
+
+          {/* دکمه پروفایل کاربری اضافه شد */}
+          <Link href="/profile" passHref>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="text-foreground/80 hover:bg-secondary hover:text-gold"
+              aria-label="پروفایل کاربری"
+            >
+              <User className="size-5" />
+            </Button>
+          </Link>
+
           <Button
             size="icon"
             variant="ghost"
@@ -168,6 +181,15 @@ export function SiteNavbar() {
                 {item.label}
               </Link>
             ))}
+
+            {/* لینک پروفایل برای منوی موبایل */}
+            <Link
+              href="/profile"
+              className="block rounded-xl px-3 py-2.5 text-sm text-foreground/80 transition-colors hover:bg-secondary hover:text-gold"
+              onClick={() => setMenuOpen(false)}
+            >
+              پروفایل کاربری
+            </Link>
 
             <button
               type="button"
