@@ -4,6 +4,7 @@ import { SiteNavbar } from "@/components/site-navbar";
 import { SiteFooter } from "@/components/site-footer";
 import { ProductGallery } from "@/components/product-gallery";
 import { AddToCartAction } from "@/components/add-to-cart-action";
+import { ProductTabs } from "@/components/product-tabs"; // <--- ایمپورت کامپوننت تب‌ها
 import { ShieldCheck, Truck, Sparkles, CheckCircle2 } from "lucide-react";
 
 type ProductPageProps = {
@@ -17,12 +18,18 @@ function formatPrice(amount: number): string {
 export default async function ProductDetailPage({ params }: ProductPageProps) {
   const { id } = await params;
 
-  // اضافه کردن tags: true به کوئری پریزما
+  // اضافه کردن جداول جدید به کوئری پریزما
   const product = await prisma.product.findUnique({
     where: { id },
     include: { 
       category: true,
-      tags: true 
+      tags: true,
+      attributes: true, // <--- واکشی مشخصات فنی
+      faqs: true,       // <--- واکشی سوالات متداول
+      reviews: {        // <--- واکشی نظرات (فقط تایید شده‌ها)
+        where: { isApproved: true },
+        orderBy: { createdAt: 'desc' } // جدیدترین‌ها در ابتدا
+      }
     }
   });
 
@@ -30,12 +37,10 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
   const activePrice = product.discountedPrice ?? product.price;
 
-  // تبدیل متن توضیحات به آرایه‌ای از خطوط برای ساخت Bullet Points
   const bulletPoints = product.description
     ? product.description.split('\n').filter(line => line.trim().length > 0)
     : [];
 
-  // ساخت آبجکت تمیز برای Redux همراه با تگ‌ها
   const cleanProductForCart = {
     id: product.id,
     title: product.title,
@@ -43,8 +48,8 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
     price: product.price,
     discountedPrice: product.discountedPrice,
     images: product.images,
-    badge: product.tags?.[0]?.name || null, // استفاده از اولین تگ به جای فیلد حذف شده badge
-    tags: product.tags?.map(t => t.name) || [], // ارسال تگ‌ها به صورت آرایه
+    badge: product.tags?.[0]?.name || null, 
+    tags: product.tags?.map(t => t.name) || [], 
   };
 
   return (
@@ -66,7 +71,6 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
                 {product.category.name}
               </span>
               
-              {/* رندر کردن تمام برچسب‌های متصل به محصول */}
               {product.tags && product.tags.length > 0 && product.tags.map((tag) => (
                 <span key={tag.id} className="text-xs font-medium text-[#0a0f1c] bg-gold px-2.5 py-1 rounded-md flex items-center gap-1 shadow-sm">
                   <Sparkles className="size-3" />
@@ -131,6 +135,17 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
           </div>
         </div>
+
+        {/* کامپوننت تب‌ها در زیر بخش اصلی */}
+        <ProductTabs 
+          productId={product.id}
+          description={product.richDescription}
+          attributes={product.attributes}
+          faqs={product.faqs}
+          videoUrl={product.videoUrl}
+          reviews={product.reviews}
+        />
+
       </main>
       <SiteFooter />
     </div>

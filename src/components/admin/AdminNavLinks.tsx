@@ -8,8 +8,9 @@ const menuItems = [
   { title: "داشبورد", href: "/admin" },
   { title: "محصولات", href: "/admin/products" },
   { title: "دسته‌بندی‌ها", href: "/admin/categories" },
-  { title: "برچسب‌ها", href: "/admin/tags" }, // <--- تب جدید برچسب‌ها که خواستید
+  { title: "برچسب‌ها", href: "/admin/tags" }, 
   { title: "سفارشات", href: "/admin/orders" },
+  { title: "نظرات", href: "/admin/reviews" }, // <--- اضافه شدن تب نظرات در اینجا
 ];
 
 export function AdminNavLinks() {

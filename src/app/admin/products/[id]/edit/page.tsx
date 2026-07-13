@@ -12,11 +12,13 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
   // دریافت لیست تمام برچسب‌ها برای نمایش در فرم
   const tags = await prisma.tag.findMany();
   
-  // دریافت اطلاعات محصول به همراه تگ‌هایی که قبلاً انتخاب شده‌اند
+  // دریافت اطلاعات محصول به همراه تگ‌ها، مشخصات فنی و سوالات متداول
   const product = await prisma.product.findUnique({
     where: { id: productId },
     include: { 
-      tags: true // <--- این خط برای اینکه فرم بداند کدام چک‌باکس‌ها را تیک بزند ضروری است
+      tags: true,
+      attributes: true, // <--- واکشی جدول مشخصات فنی اضافه شد
+      faqs: true        // <--- واکشی جدول سوالات متداول اضافه شد
     }
   });
 
