@@ -22,31 +22,53 @@ enum OrderStatus {
   CANCELLED
 }
 
+// ==========================================
+// User & Authentication Models
+// ==========================================
+
 model User {
-  id        String    @id @default(cuid())
-  phone     String    @unique
-  name      String?   // فقط نام و نام‌خانوادگی در یک فیلد یا جداگانه
-  role      Role      @default(USER)
+  id            String    @id @default(cuid())
+  phone         String?   @unique // شماره موبایل (برای ورود با OTP)
+  name          String?   // نام و نام‌خانوادگی
+  email         String?   @unique // ایمیل (برای NextAuth و لاگین احتمالی با گوگل)
+  emailVerified DateTime?
+  image         String?   // عکس پروفایل
+  role          Role      @default(USER)
   
-  addresses Address[] // اضافه شدن ارتباط با جدول آدرس‌ها
-  orders    Order[]
+  addresses     Address[]
+  orders        Order[]
+  accounts      Account[] // ارتباط با اکانت‌های NextAuth
+  sessions      Session[] // ارتباط با سشن‌های NextAuth
   
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
-model Address {
-  id          String   @id @default(cuid())
-  title       String   // عنوان آدرس (مثلاً: خانه، محل کار)
-  fullAddress String   // آدرس کامل پستی
-  postalCode  String?  // کد پستی (برای ارسال پستی در ایران بسیار مهم است)
-  
-  // ارتباط با کاربر
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+// جداول استاندارد NextAuth برای مدیریت سشن‌ها و شبکه‌های اجتماعی
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model OTP {
@@ -58,6 +80,23 @@ model OTP {
 
   @@index([phone])
 }
+
+model Address {
+  id          String   @id @default(cuid())
+  title       String   // عنوان آدرس (مثلاً: خانه، محل کار)
+  fullAddress String   // آدرس کامل پستی
+  postalCode  String?  // کد پستی
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ==========================================
+// E-Commerce Models
+// ==========================================
 
 model Category {
   id        String     @id @default(cuid())
@@ -71,72 +110,74 @@ model Category {
 }
 
 model Product {
-  id            String      @id @default(cuid())
-  title         String
-  slug          String      @unique
-  subtitle      String?     // اضافه شد: برای متن کوتاه زیر عنوان در کارت‌ها
-  description   String   @db.Text      // برای توضیحات کامل در صفحه داخلی محصول
-  price         Int
-  discountedPrice Int? // قیمت نهایی (اگر تخفیف دارد)
-  stock         Int
-  images        String[]
-  isAvailable   Boolean     @default(true)
-  isFeatured      Boolean  @default(false) // <--- اضافه شد: برای بخش محصولات منتخب لندینگ
-  categoryId    String
-  category      Category    @relation(fields: [categoryId], references: [id])
+  id              String      @id @default(cuid())
+  title           String
+  slug            String      @unique
+  subtitle        String?     
+  description     String      @db.Text      
+  richDescription String?     @db.Text 
+  price           Int
+  discountedPrice Int? 
+  stock           Int
+  images          String[]
+  videoUrl        String?   
+  isAvailable     Boolean     @default(true)
+  isFeatured      Boolean     @default(false) 
+  
+  categoryId      String
+  category        Category    @relation(fields: [categoryId], references: [id])
   tags            Tag[]
-  orderItems    OrderItem[]
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  videoUrl        String?   // لینک ویدیوی محصول
-  richDescription String?   @db.Text // توضیحات کامل HTML برای ادیتور متن
-
-  // ارتباطات (Relations) جدید:
+  
+  orderItems      OrderItem[]
   attributes      ProductAttribute[]
   reviews         Review[]
   faqs            ProductFAQ[]
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 }
 
-// جدول ویژگی‌ها و مشخصات فنی (مثل حجم، نوع پوست و...)
 model ProductAttribute {
   id        String  @id @default(cuid())
-  key       String  // عنوان ویژگی (مثلاً "حجم")
-  value     String  // مقدار ویژگی (مثلاً "۳۰ میلی‌لیتر")
+  key       String  
+  value     String  
   
   productId String
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
-// جدول نظرات کاربران
 model Review {
   id          String   @id @default(cuid())
-  userName    String   // نام کاربر
-  text        String   @db.Text // متن نظر
-  adminReply  String?  @db.Text // پاسخ ادمین
-  isApproved  Boolean  @default(false) // وضعیت تایید (پیش‌فرض: در انتظار تایید)
-  createdAt   DateTime @default(now())
-
+  userName    String   
+  text        String   @db.Text 
+  adminReply  String?  @db.Text 
+  isApproved  Boolean  @default(false) 
+  
   productId   String
   product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
 }
 
-// جدول سوالات متداول اختصاصی هر محصول
 model ProductFAQ {
   id        String   @id @default(cuid())
-  question  String   // سوال
-  answer    String   @db.Text // جواب
-  createdAt DateTime @default(now())
-
+  question  String   
+  answer    String   @db.Text 
+  
   productId String
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
 }
+
 model Tag {
   id        String    @id @default(uuid())
   name      String    @unique
-  products  Product[] // ارتباط با محصولات
+  products  Product[] 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 }
+
 model Order {
   id          String      @id @default(cuid())
   userId      String
