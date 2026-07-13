@@ -8,8 +8,15 @@ export async function createProductAction(formData: FormData, imageUrls: string[
   const title = formData.get('title') as string;
   const slug = title.replace(/\s+/g, '-').toLowerCase();
   
-  // دریافت آرایه‌ای از ID تگ‌های انتخاب شده از فرم
   const tagIds = formData.getAll('tags') as string[];
+
+  // دریافت و استخراج (Parse) اطلاعات جدید فرم
+  const videoUrl = (formData.get('videoUrl') as string) || null;
+  const attributesRaw = formData.get('attributes') as string;
+  const faqsRaw = formData.get('faqs') as string;
+
+  const attributes = attributesRaw ? JSON.parse(attributesRaw) : [];
+  const faqs = faqsRaw ? JSON.parse(faqsRaw) : [];
 
   try {
     await prisma.product.create({
@@ -23,11 +30,29 @@ export async function createProductAction(formData: FormData, imageUrls: string[
         isFeatured: formData.get('isFeatured') === 'true',
         categoryId: formData.get('categoryId') as string,
         description: formData.get('description') as string,
+        richDescription: (formData.get('richDescription') as string) || null,
         images: imageUrls,
         stock: 0,
-        // متصل کردن محصول به تگ‌های انتخاب شده
+        videoUrl: videoUrl, // اضافه شدن لینک ویدیو
+        
         tags: {
           connect: tagIds.map((id) => ({ id }))
+        },
+        
+        // ساخت همزمان مشخصات فنی (Nested Create)
+        attributes: {
+          create: attributes.map((attr: { key: string; value: string }) => ({
+            key: attr.key,
+            value: attr.value
+          }))
+        },
+        
+        // ساخت همزمان سوالات متداول (Nested Create)
+        faqs: {
+          create: faqs.map((faq: { question: string; answer: string }) => ({
+            question: faq.question,
+            answer: faq.answer
+          }))
         }
       }
     });
@@ -41,8 +66,17 @@ export async function createProductAction(formData: FormData, imageUrls: string[
   }
 }
 
+// ۲. اکشن ویرایش محصول
 export async function updateProductAction(id: string, formData: FormData, imageUrls: string[]) {
   const tagIds = formData.getAll('tags') as string[];
+
+  // دریافت و استخراج (Parse) اطلاعات جدید فرم
+  const videoUrl = (formData.get('videoUrl') as string) || null;
+  const attributesRaw = formData.get('attributes') as string;
+  const faqsRaw = formData.get('faqs') as string;
+
+  const attributes = attributesRaw ? JSON.parse(attributesRaw) : [];
+  const faqs = faqsRaw ? JSON.parse(faqsRaw) : [];
 
   try {
     await prisma.product.update({
@@ -56,10 +90,29 @@ export async function updateProductAction(id: string, formData: FormData, imageU
         isFeatured: formData.get('isFeatured') === 'true',
         categoryId: formData.get('categoryId') as string,
         description: formData.get('description') as string,
+        richDescription: (formData.get('richDescription') as string) || null,
         images: imageUrls,
-        // جایگزین کردن تگ‌های قبلی با تگ‌های جدید انتخاب شده
+        videoUrl: videoUrl, // آپدیت لینک ویدیو
+
         tags: {
           set: tagIds.map((id) => ({ id }))
+        },
+
+        // پاک کردن رکوردهای قبلی و ساخت رکوردهای جدید برای آپدیت تمیز
+        attributes: {
+          deleteMany: {}, 
+          create: attributes.map((attr: { key: string; value: string }) => ({
+            key: attr.key,
+            value: attr.value
+          }))
+        },
+        
+        faqs: {
+          deleteMany: {},
+          create: faqs.map((faq: { question: string; answer: string }) => ({
+            question: faq.question,
+            answer: faq.answer
+          }))
         }
       }
     });
