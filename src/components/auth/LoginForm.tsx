@@ -1,12 +1,12 @@
+// فایل فرم لاگین شما
 'use client';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react'; // <--- اضافه شد
 import { Button } from '@/components/ui/button';
 
-interface LoginFormProps {}
-
-const LoginForm: React.FC<LoginFormProps> = () => {
+export default function LoginForm() {
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otpCode, setOtpCode] = useState('');
@@ -17,6 +17,7 @@ const LoginForm: React.FC<LoginFormProps> = () => {
 
   const handleSendOTP = async () => {
     setLoading(true);
+    setError(null);
     try {
       const response = await fetch('/api/auth/send-otp', {
         method: 'POST',
@@ -25,7 +26,7 @@ const LoginForm: React.FC<LoginFormProps> = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to send OTP');
+        throw new Error('خطا در ارسال پیامک');
       }
 
       setStep('otp');
@@ -38,27 +39,29 @@ const LoginForm: React.FC<LoginFormProps> = () => {
 
   const handleVerifyOTP = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const response = await fetch('/api/auth/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: phoneNumber, code: otpCode }),
+      const res = await signIn('credentials', {
+        phone: phoneNumber,
+        code: otpCode,
+        redirect: false, 
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to verify OTP');
+      if (res?.error) {
+        throw new Error(res.error);
       }
 
-      const data = await response.json();
-      if (data.requiresOnboarding) {
-        router.push('/onboarding');
-      } else {
-        router.push('/dashboard');
-      }
+      // در صورت موفقیت:
+      router.push('/profile');
+      router.refresh(); // به Next.js می‌گوییم کوکی‌های جدید را بلافاصله بخواند
+      
+      // نکته مهم: اینجا setLoading(false) را صدا نمی‌زنیم!
+      // اجازه می‌دهیم دکمه در حالت "در حال بررسی..." بماند تا کاربر به صفحه جدید منتقل شود.
+
     } catch (err) {
+      // فقط اگر خطایی رخ داد، دکمه را دوباره برای کلیک فعال می‌کنیم
       setError((err as Error).message);
-    } finally {
-      setLoading(false);
+      setLoading(false); 
     }
   };
 
@@ -83,6 +86,7 @@ const LoginForm: React.FC<LoginFormProps> = () => {
               onChange={(e) => setPhoneNumber(e.target.value)}
               placeholder="09123456789"
               dir="ltr"
+              maxLength={11}
               className="w-full p-4 border border-border rounded-xl bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-gold text-left tracking-widest"
             />
           </div>
@@ -130,6 +134,7 @@ const LoginForm: React.FC<LoginFormProps> = () => {
           </Button>
           
           <button 
+            type="button"
             onClick={() => setStep('phone')} 
             className="text-sm text-muted-foreground hover:text-gold mt-4"
           >
@@ -139,6 +144,4 @@ const LoginForm: React.FC<LoginFormProps> = () => {
       )}
     </>
   );
-};
-
-export default LoginForm;
+}

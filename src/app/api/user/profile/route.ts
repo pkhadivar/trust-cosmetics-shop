@@ -1,36 +1,36 @@
+// src/app/api/user/profile/route.ts
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { prisma } from '@/lib/prisma';
-import { verifyToken } from '@/lib/session';
-import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
-    try {
-      // تغییر جدید: استفاده از await برای خواندن کوکی
-      const cookieStore = await cookies();
-      const token = cookieStore.get('session')?.value;
-      
-      if (!token) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-
-    // گرفتن آیدی کاربر از توکن
-    const { userId } = await verifyToken(token);
-
-    const body = await request.json();
-    const { fullName } = body;
-
-    if (!fullName || typeof fullName !== 'string') {
-      return NextResponse.json({ error: 'Invalid full name' }, { status: 400 });
+  try {
+    // ۱. بررسی امن توکن با استفاده از NextAuth (جایگزین روش دستی قبلی)
+    const session = await getServerSession(authOptions);
+    
+    if (!session || !session.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // ذخیره نام در دیتابیس
+    const body = await request.json();
+    
+    // در فرانت‌اند فیلد name را ارسال کرده بودیم
+    const { name } = body;
+
+    if (!name || typeof name !== 'string' || name.trim().length < 2) {
+      return NextResponse.json({ error: 'نام وارد شده معتبر نیست' }, { status: 400 });
+    }
+
+    // ۲. ذخیره نام در دیتابیس با استفاده از ID سشن
     const user = await prisma.user.update({
-      where: { id: userId as string },
-      data: { name: fullName },
+      where: { id: (session.user as any).id },
+      data: { name: name.trim() },
     });
 
     return NextResponse.json({ message: 'Profile updated successfully', user }, { status: 200 });
   } catch (error) {
+    console.error("Profile Update Error:", error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
