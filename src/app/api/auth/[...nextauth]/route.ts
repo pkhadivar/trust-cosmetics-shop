@@ -52,7 +52,8 @@ export const authOptions: NextAuthOptions = {
           user = await prisma.user.create({
             data: {
               phone: credentials.phone,
-              name: "کاربر عزیز", 
+              name: "کاربر عزیز",
+              role: "USER", // اختصاص نقش پیش‌فرض برای کاربران جدید
             },
           });
         }
@@ -62,6 +63,7 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           name: user.name,
           email: user.phone, // ذخیره موبایل در فیلد ایمیل برای نمایش در پروفایل
+          role: user.role,   // اضافه کردن نقش کاربر به خروجی
         };
       },
     }),
@@ -70,12 +72,15 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        // از آنجایی که تایپ پیش‌فرض NextAuth نقش را ندارد، برای جلوگیری از خطای TS کست می‌کنیم
+        token.role = (user as any).role; 
       }
       return token;
     },
     async session({ session, token }) {
       if (token && session.user) {
         (session.user as any).id = token.id;
+        (session.user as any).role = token.role; // انتقال نقش به سشن کلاینت
       }
       return session;
     },

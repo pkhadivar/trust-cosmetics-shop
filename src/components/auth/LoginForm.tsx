@@ -41,24 +41,27 @@ export default function LoginForm() {
     setLoading(true);
     setError(null);
     try {
-      // استفاده از NextAuth برای تایید هویت و ساخت سشن
       const res = await signIn('credentials', {
         phone: phoneNumber,
         code: otpCode,
-        redirect: false, // جلوگیری از ریدایرکت خودکار تا خودمان مسیر را کنترل کنیم
+        redirect: false, 
       });
 
       if (res?.error) {
         throw new Error(res.error);
       }
 
-      // هدایت به صفحه پروفایل (که در آنجا تصمیم می‌گیریم آیا کاربر نیاز به تکمیل اطلاعات دارد یا خیر)
+      // در صورت موفقیت:
       router.push('/profile');
+      router.refresh(); // به Next.js می‌گوییم کوکی‌های جدید را بلافاصله بخواند
       
+      // نکته مهم: اینجا setLoading(false) را صدا نمی‌زنیم!
+      // اجازه می‌دهیم دکمه در حالت "در حال بررسی..." بماند تا کاربر به صفحه جدید منتقل شود.
+
     } catch (err) {
+      // فقط اگر خطایی رخ داد، دکمه را دوباره برای کلیک فعال می‌کنیم
       setError((err as Error).message);
-    } finally {
-      setLoading(false);
+      setLoading(false); 
     }
   };
 
