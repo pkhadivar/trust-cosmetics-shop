@@ -1,4 +1,3 @@
-// src/components/site-navbar.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -85,12 +84,11 @@ export function SiteNavbar() {
 
             {categoriesOpen && (
               <div className="absolute right-0 top-full z-50 pt-4">
-                {/* تغییر به منوی عمودی (Vertical Dropdown) با عرض ثابت و قابلیت اسکرول عمودی داخلی */}
                 <div className="w-72 rounded-2xl border border-border bg-card p-3 shadow-[0_24px_80px_-20px_rgba(11,17,32,0.85)] max-h-[75vh] overflow-y-auto flex flex-col custom-scrollbar">
                   {dbCategories.map((category) => (
                     <div key={category.id} className="mb-2 flex flex-col last:mb-0">
                       <Link
-                        href={`/categories/${category.slug}`}
+                        href={`/shop?category=${category.id}`} // مسیر جدید
                         className="rounded-xl px-4 py-2.5 text-sm font-bold text-foreground transition-colors hover:bg-secondary/80 hover:text-gold"
                         onClick={() => setCategoriesOpen(false)}
                       >
@@ -101,7 +99,7 @@ export function SiteNavbar() {
                           {category.children.map((child: any) => (
                             <li key={child.id}>
                               <Link
-                                href={`/categories/${child.slug}`}
+                                href={`/shop?category=${child.id}`} // مسیر جدید برای زیردسته‌ها
                                 className="block rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary/50 hover:text-gold"
                                 onClick={() => setCategoriesOpen(false)}
                               >
@@ -129,7 +127,6 @@ export function SiteNavbar() {
             <Search className="size-5" />
           </Button>
 
-          {/* دکمه پروفایل کاربری */}
           <Link href="/profile" passHref>
             <Button
               size="icon"
@@ -207,7 +204,7 @@ export function SiteNavbar() {
                 {dbCategories.map((category) => (
                   <div key={category.id}>
                     <Link
-                      href={`/categories/${category.slug}`}
+                      href={`/shop?category=${category.id}`} // مسیر جدید موبایل
                       className="text-sm font-semibold text-foreground transition-colors hover:text-gold"
                       onClick={() => setMenuOpen(false)}
                     >
@@ -218,7 +215,7 @@ export function SiteNavbar() {
                         {category.children.map((child: any) => (
                           <li key={child.id}>
                             <Link
-                              href={`/categories/${child.slug}`}
+                              href={`/shop?category=${child.id}`} // مسیر جدید زیردسته‌های موبایل
                               className="text-sm text-muted-foreground transition-colors hover:text-gold"
                               onClick={() => setMenuOpen(false)}
                             >
