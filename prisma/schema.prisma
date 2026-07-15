@@ -84,8 +84,10 @@ model OTP {
 model Address {
   id          String   @id @default(cuid())
   title       String   // عنوان آدرس (مثلاً: خانه، محل کار)
+  state       String   // استان (الزامی)
+  city        String   // شهر (الزامی)
   fullAddress String   // آدرس کامل پستی
-  postalCode  String?  // کد پستی
+  postalCode  String   // کد پستی (الزامی شد)
   
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)

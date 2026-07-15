@@ -4,11 +4,11 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useDispatch, useSelector } from "react-redux";
-import { ChevronDown, Menu, Search, ShoppingBag, X, User } from "lucide-react"; // آیکون User اضافه شد
+import { ChevronDown, Menu, Search, ShoppingBag, X, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { selectCartItemCount, toggleCartDrawer } from "@/store/cartSlice";
 import type { RootState } from "@/store/store";
-import { getNavbarCategoriesAction } from "@/actions/category"; // فراخوانی اکشن سروری
+import { getNavbarCategoriesAction } from "@/actions/category";
 
 const navItems = [
   { label: "خانه", href: "/" },
@@ -84,35 +84,34 @@ export function SiteNavbar() {
 
             {categoriesOpen && (
               <div className="absolute right-0 top-full z-50 pt-4">
-                <div className="w-[min(90vw,56rem)] rounded-3xl border border-border bg-card p-6 shadow-[0_24px_80px_-20px_rgba(11,17,32,0.85)]">
-                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {dbCategories.map((category) => (
-                      <div key={category.id}>
-                        <Link
-                          href={`/categories/${category.slug}`}
-                          className="text-sm font-semibold text-foreground transition-colors hover:text-gold"
-                          onClick={() => setCategoriesOpen(false)}
-                        >
-                          {category.name}
-                        </Link>
-                        {category.children && category.children.length > 0 && (
-                          <ul className="mt-3 space-y-2">
-                            {category.children.map((child: any) => (
-                              <li key={child.id}>
-                                <Link
-                                  href={`/categories/${child.slug}`}
-                                  className="text-sm text-muted-foreground transition-colors hover:text-gold"
-                                  onClick={() => setCategoriesOpen(false)}
-                                >
-                                  {child.name}
-                                </Link>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                {/* تغییر به منوی عمودی (Vertical Dropdown) با عرض ثابت و قابلیت اسکرول عمودی داخلی */}
+                <div className="w-72 rounded-2xl border border-border bg-card p-3 shadow-[0_24px_80px_-20px_rgba(11,17,32,0.85)] max-h-[75vh] overflow-y-auto flex flex-col custom-scrollbar">
+                  {dbCategories.map((category) => (
+                    <div key={category.id} className="mb-2 flex flex-col last:mb-0">
+                      <Link
+                        href={`/categories/${category.slug}`}
+                        className="rounded-xl px-4 py-2.5 text-sm font-bold text-foreground transition-colors hover:bg-secondary/80 hover:text-gold"
+                        onClick={() => setCategoriesOpen(false)}
+                      >
+                        {category.name}
+                      </Link>
+                      {category.children && category.children.length > 0 && (
+                        <ul className="mt-1 flex flex-col space-y-0.5 border-r-2 border-border/40 me-5 pe-2">
+                          {category.children.map((child: any) => (
+                            <li key={child.id}>
+                              <Link
+                                href={`/categories/${child.slug}`}
+                                className="block rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary/50 hover:text-gold"
+                                onClick={() => setCategoriesOpen(false)}
+                              >
+                                {child.name}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -129,7 +128,7 @@ export function SiteNavbar() {
             <Search className="size-5" />
           </Button>
 
-          {/* دکمه پروفایل کاربری اضافه شد */}
+          {/* دکمه پروفایل کاربری */}
           <Link href="/profile" passHref>
             <Button
               size="icon"
@@ -182,7 +181,6 @@ export function SiteNavbar() {
               </Link>
             ))}
 
-            {/* لینک پروفایل برای منوی موبایل */}
             <Link
               href="/profile"
               className="block rounded-xl px-3 py-2.5 text-sm text-foreground/80 transition-colors hover:bg-secondary hover:text-gold"
@@ -215,7 +213,7 @@ export function SiteNavbar() {
                       {category.name}
                     </Link>
                     {category.children && category.children.length > 0 && (
-                      <ul className="mt-2 space-y-1.5 ps-3">
+                      <ul className="mt-2 space-y-1.5 ps-3 border-r-2 border-border/40 me-2 pe-2">
                         {category.children.map((child: any) => (
                           <li key={child.id}>
                             <Link
