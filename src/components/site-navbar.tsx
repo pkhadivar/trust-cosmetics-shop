@@ -13,7 +13,7 @@ import { getNavbarCategoriesAction } from "@/actions/category";
 const navItems = [
   { label: "خانه", href: "/" },
   { label: "محصولات", href: "/shop" },
-  { label: "درباره ما", href: "/#features" },
+  { label: "درباره ما", href: "/about" },
   { label: "تماس با ما", href: "/contact" },
 ];
 

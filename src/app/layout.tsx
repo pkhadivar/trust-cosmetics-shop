@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Vazirmatn } from "next/font/google";
 import { Providers } from "@/components/providers";
+import { SiteNavbar } from "@/components/site-navbar"; // ایمپورت هدر
+import { SiteFooter } from "@/components/site-footer"; // ایمپورت فوتر
 import "./globals.css";
 
 const vazirmatn = Vazirmatn({
@@ -27,8 +29,19 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fa" dir="rtl" className={`${vazirmatn.variable} bg-background`}>
-      <body className="font-sans antialiased">
-        <Providers>{children}</Providers>
+      <body className="font-sans antialiased flex flex-col min-h-screen">
+        <Providers>
+          {/* هدر در بالای تمام صفحات */}
+          <SiteNavbar />
+          
+          {/* محتوای متغیر صفحات */}
+          <main className="flex-1">
+            {children}
+          </main>
+          
+          {/* فوتر در پایین تمام صفحات */}
+          <SiteFooter />
+        </Providers>
       </body>
     </html>
   );

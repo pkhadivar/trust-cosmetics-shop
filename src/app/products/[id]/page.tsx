@@ -54,7 +54,6 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      <SiteNavbar />
       
       <main className="mx-auto max-w-7xl px-5 py-12 sm:px-8 lg:py-20">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-start">
@@ -147,7 +146,6 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
         />
 
       </main>
-      <SiteFooter />
     </div>
   );
 }
