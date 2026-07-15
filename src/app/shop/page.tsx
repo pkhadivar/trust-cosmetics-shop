@@ -72,7 +72,6 @@ export default async function ShopPage({
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <SiteNavbar />
       
       <div className="bg-card border-b border-border py-12 px-5">
         <div className="mx-auto max-w-7xl text-center">
@@ -118,7 +117,6 @@ export default async function ShopPage({
         </div>
       </main>
       
-      <SiteFooter />
     </div>
   );
 }

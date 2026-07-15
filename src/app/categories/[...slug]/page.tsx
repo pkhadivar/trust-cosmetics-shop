@@ -39,7 +39,6 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      <SiteNavbar />
       <main className="mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:py-24">
         
         <div className="text-center">
@@ -69,7 +68,6 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
           </div>
         )}
       </main>
-      <SiteFooter />
     </div>
   );
 }
