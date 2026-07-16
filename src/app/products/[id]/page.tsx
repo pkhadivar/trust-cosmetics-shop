@@ -141,7 +141,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
           description={product.richDescription}
           attributes={product.attributes}
           faqs={product.faqs}
-          videoUrl={product.videoUrl}
+          videoUrls={product.videoUrls} // <--- تغییر یافت: هماهنگ با ساختار جدید آرایه‌ای در Prisma
           reviews={product.reviews}
         />
 

@@ -122,7 +122,7 @@ model Product {
   discountedPrice Int? 
   stock           Int
   images          String[]
-  videoUrl        String?   
+  videoUrls       String[]   
   isAvailable     Boolean     @default(true)
   isFeatured      Boolean     @default(false) 
   

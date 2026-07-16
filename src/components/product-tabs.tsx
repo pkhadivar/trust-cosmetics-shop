@@ -2,26 +2,27 @@
 
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { ReviewForm } from "@/components/review-form"; // <--- اضافه شدن ایمپورت فرم نظرات
+import { ReviewForm } from "@/components/review-form";
 
 type Attribute = { id: string; key: string; value: string };
 type FAQ = { id: string; question: string; answer: string };
 type Review = { id: string; userName: string; text: string; adminReply?: string | null; createdAt: Date };
 
 type ProductTabsProps = {
-  productId: string; // <--- اضافه شدن آیدی محصول
+  productId: string;
   description: string | null;
   attributes: Attribute[];
   faqs: FAQ[];
-  videoUrl: string | null;
+  videoUrls: string[]; // <--- تغییر از videoUrl به videoUrls (آرایه)
   reviews: Review[];
 };
 
-export function ProductTabs({ productId, description, attributes, faqs, videoUrl, reviews }: ProductTabsProps) {
+export function ProductTabs({ productId, description, attributes, faqs, videoUrls, reviews }: ProductTabsProps) {
   const availableTabs = [
     { id: "description", label: "توضیحات", hasData: !!description },
     { id: "attributes", label: "جزئیات", hasData: attributes.length > 0 },
-    { id: "video", label: "ویدئو", hasData: !!videoUrl },
+    // بررسی وجود ویدیو با چک کردن طول آرایه
+    { id: "video", label: "ویدئو", hasData: videoUrls && videoUrls.length > 0 },
     { id: "reviews", label: "نظرات", hasData: true }, 
     { id: "faqs", label: "سوالات", hasData: faqs.length > 0 },
   ].filter((tab) => tab.hasData);
@@ -83,15 +84,19 @@ export function ProductTabs({ productId, description, attributes, faqs, videoUrl
           </div>
         )}
 
-        {/* ۳. تب ویدیو */}
-        {activeTab === "video" && videoUrl && (
-          <div className="aspect-video w-full max-w-4xl mx-auto rounded-2xl overflow-hidden border border-border shadow-lg bg-black">
-            <iframe
-              src={videoUrl}
-              className="w-full h-full"
-              allowFullScreen
-              title="ویدیو معرفی محصول"
-            />
+        {/* ۳. تب ویدیو (ویرایش شده برای پشتیبانی از چند ویدیو) */}
+        {activeTab === "video" && videoUrls && videoUrls.length > 0 && (
+          <div className={`grid gap-8 ${videoUrls.length === 1 ? 'grid-cols-1 max-w-4xl mx-auto' : 'grid-cols-1 md:grid-cols-2'}`}>
+            {videoUrls.map((url, index) => (
+              <div key={index} className="aspect-video w-full rounded-2xl overflow-hidden border border-border shadow-lg bg-[#050810]">
+                <video
+                  src={url}
+                  controls
+                  preload="metadata"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ))}
           </div>
         )}
 
@@ -153,7 +158,7 @@ export function ProductTabs({ productId, description, attributes, faqs, videoUrl
                       {review.text}
                     </p>
                     
-                    {/* پاسخ ادمین (اگر وجود داشت) */}
+                    {/* پاسخ ادمین */}
                     {review.adminReply && (
                       <div className="mt-4 p-4 rounded-xl bg-gold/5 border border-gold/20 mr-4 md:mr-8">
                         <div className="flex items-center gap-2 mb-2">

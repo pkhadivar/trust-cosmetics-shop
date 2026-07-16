@@ -5,7 +5,17 @@ const nextConfig = {
   },
   images: {
     unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'trust-shop-storage.storage.c2.liara.site',
+      },
+      {
+        protocol: 'https',
+        hostname: 'placehold.co',
+      }
+    ],
   },
-}
+};
 
-export default nextConfig
+export default nextConfig;
