@@ -1,102 +1,129 @@
 import Image from "next/image";
+import Link from "next/link";
 import { ArrowLeft, Star } from "lucide-react";
+import { prisma } from "@/lib/prisma";
 
-export function HeroSection() {
+export async function HeroSection() {
+  // ۱. دریافت تعداد واقعی محصولات موجود از دیتابیس
+  const productCount = await prisma.product.count({
+    where: { isAvailable: true }
+  });
+
+  // ۲. دریافت محصول ویژه برای هدر (با استفاده از فیلد isFeatured)
+  const heroProduct = await prisma.product.findFirst({
+    where: { 
+      isFeatured: true,
+      isAvailable: true 
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  // مقادیر Fallback برای جلوگیری از ارور در صورت خالی بودن دیتابیس
+  const displayProduct = {
+    id: heroProduct?.id || "fallback-id",
+    title: heroProduct?.title || "کرم خاویار تراست اسمارت",
+    price: heroProduct?.price || 7470000,
+    // دریافت اولین عکس از آرایه تصاویر
+    imageUrl: heroProduct?.images?.[0] || "https://placehold.co/600x800/1A2235/D4AF37/png?text=Trust+Product", 
+  };
+
   return (
-    <section className="relative overflow-hidden">
-      {/* ambient gold glow */}
-      <div
-        className="pointer-events-none absolute -top-40 start-1/2 size-[600px] -translate-x-1/2 rounded-full opacity-20 blur-3xl"
-        style={{
-          background: "radial-gradient(circle, #d4af37, transparent 70%)",
-        }}
-        aria-hidden
-      />
+    <section className="relative overflow-hidden bg-[#0B1120] py-16 lg:py-24">
+      {/* افکت‌های نوری پس‌زمینه */}
+      <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-white/5 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-gold/5 rounded-full blur-[150px] translate-x-1/3 translate-y-1/3 pointer-events-none" />
 
-      <div className="mx-auto grid max-w-7xl items-center gap-12 px-5 py-16 sm:px-8 lg:grid-cols-2 lg:py-24">
-        {/* Copy */}
-        <div className="relative z-10 text-center lg:text-start">
-          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary/60 px-4 py-1.5 text-xs text-gold">
-            <Star className="size-3.5 fill-gold" />
-            مجموعه لاکچری ۱۴۰۵
-          </span>
-
-          <h1 className="mt-6 text-balance text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl">
-            زیبایی ماندگار با
-            <span className="block gold-gradient-text">مراقبت تخصصی پوست</span>
-          </h1>
-
-          <p className="mx-auto mt-6 max-w-md text-pretty leading-relaxed text-muted-foreground lg:mx-0">
-            ترکیبی از علم و طبیعت؛ محصولات تراست با فرمولاسیون اختصاصی و تاییدیه
-            پزشکان متخصص، درخششی بی‌نظیر به پوست و موی شما هدیه می‌دهند.
-          </p>
-
-          <div className="mt-9 flex flex-col items-center gap-4 sm:flex-row lg:justify-start">
-            <a
-              href="#products"
-              className="group inline-flex h-13 items-center justify-center gap-2 rounded-lg bg-gold px-8 text-base font-semibold text-primary-foreground transition-colors hover:bg-gold-soft"
-            >
-              مشاهده محصولات
-              <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
-            </a>
-            <a
-              href="#categories"
-              className="inline-flex h-13 items-center justify-center rounded-lg border border-border bg-transparent px-8 text-base text-foreground transition-colors hover:bg-secondary hover:text-gold"
-            >
-              داستان برند
-            </a>
-          </div>
-
-          <div className="mt-12 flex items-center justify-center gap-8 lg:justify-start">
-            <Stat value="+۲۵۰" label="محصول تخصصی" />
-            <span className="h-10 w-px bg-border" aria-hidden />
-            <Stat value="+۹۸٪" label="رضایت مشتریان" />
-            <span className="h-10 w-px bg-border" aria-hidden />
-            <Stat value="+۱۲" label="سال تجربه" />
-          </div>
-        </div>
-
-        {/* Product showcase */}
-        <div className="relative z-10">
-          <div className="relative mx-auto aspect-square max-w-md">
-            <div
-              className="absolute inset-6 rounded-full border border-gold/30"
-              aria-hidden
-            />
-            <div
-              className="absolute inset-0 rounded-full bg-gradient-to-b from-secondary/80 to-transparent"
-              aria-hidden
-            />
-            <Image
-              src="/products/hero-serum.png"
-              alt="سرم طلایی احیاکننده تراست"
-              fill
-              priority
-              className="object-contain drop-shadow-2xl"
-            />
-          </div>
-
-          {/* floating price card */}
-          <div className="absolute bottom-6 start-0 flex items-center gap-3 rounded-2xl border border-border bg-card/90 p-4 backdrop-blur-md">
-            <div className="flex size-11 items-center justify-center rounded-xl bg-gold/15 text-gold">
-              <Star className="size-5 fill-gold" />
+      <div className="mx-auto max-w-7xl px-5 sm:px-8 relative z-10">
+        <div className="flex flex-col-reverse lg:flex-row items-center gap-16 lg:gap-8">
+          
+          {/* بخش راست: متون و دکمه‌ها */}
+          <div className="w-full lg:w-1/2 flex flex-col text-right">
+            <div className="inline-flex items-center gap-2 self-end lg:self-start rounded-full border border-gold/20 bg-gold/10 px-4 py-1.5 mb-8">
+              <Star className="size-4 text-gold fill-gold" />
+              <span className="text-sm font-medium text-gold">مجموعه لاکچری ۱۴۰۵</span>
             </div>
-            <div>
-              <p className="text-sm font-semibold">سرم طلایی</p>
-              <p className="text-sm text-gold">۲٬۸۵۰٬۰۰۰ تومان</p>
+
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
+              زیبایی ماندگار با <br />
+              <span className="text-gold">مراقبت تخصصی پوست</span>
+            </h1>
+
+            <p className="text-muted-foreground/80 text-lg leading-relaxed mb-10 max-w-lg lg:ml-auto">
+              ترکیبی از علم و طبیعت؛ محصولات تراست با فرمولاسیون اختصاصی و تاییدیه پزشکان متخصص، درخششی بی‌نظیر به پوست و موی شما هدیه می‌دهند.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-4 mb-16 justify-end lg:justify-start">
+              <Link
+                href="/shop"
+                className="inline-flex items-center gap-2 rounded-xl bg-gold hover:bg-gold-soft text-[#0B1120] px-8 py-4 font-bold transition-colors"
+              >
+                مشاهده محصولات
+                <ArrowLeft className="size-5" />
+              </Link>
+              <Link
+                href="/about"
+                className="inline-flex items-center justify-center rounded-xl border border-border hover:border-gold/50 bg-card/50 hover:bg-card px-8 py-4 font-medium text-white transition-all"
+              >
+                داستان برند
+              </Link>
+            </div>
+
+            {/* آمار */}
+            <div className="grid grid-cols-3 gap-6 border-t border-border/50 pt-8 mt-auto">
+              <div>
+                <div className="text-3xl font-bold text-gold mb-1">
+                  +{productCount.toLocaleString("fa-IR")}
+                </div>
+                <div className="text-sm text-muted-foreground">محصول تخصصی</div>
+              </div>
+              <div>
+                <div className="text-3xl font-bold text-gold mb-1">+۹۸٪</div>
+                <div className="text-sm text-muted-foreground">رضایت مشتریان</div>
+              </div>
+              <div>
+                <div className="text-3xl font-bold text-gold mb-1">+۷</div>
+                <div className="text-sm rounded border border-border/50 bg-card/30 px-2 py-0.5 inline-block text-muted-foreground">
+                  سال تجربه
+                </div>
+              </div>
             </div>
           </div>
+
+          {/* بخش چپ: تصویر محصول */}
+          <div className="w-full lg:w-1/2 flex justify-center lg:justify-end relative">
+            <Link
+              href={`/products/${displayProduct.id}`}
+              className="group/hero-img block relative w-full max-w-md aspect-[4/5]"
+            >
+              <div className="absolute inset-0 bg-[#050810] rounded-3xl shadow-2xl overflow-hidden opacity-90 group-hover/hero-img:opacity-100 transition-all duration-500">
+                <Image
+                  src={displayProduct.imageUrl}
+                  alt={displayProduct.title}
+                  fill
+                  className="object-cover object-center"
+                  priority
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+              </div>
+
+              <div className="absolute -bottom-6 -left-6 md:bottom-8 md:-left-12 bg-[#1A2235]/90 backdrop-blur-md border border-white/10 rounded-2xl p-5 shadow-2xl flex items-center gap-4 transition-transform group-hover/hero-img:-translate-y-2 z-20">
+                <div className="flex flex-col text-right">
+                  <span className="text-white font-bold text-lg mb-1 transition-colors group-hover/hero-img:text-gold">
+                    {displayProduct.title}
+                  </span>
+                  <span className="text-gold font-medium text-sm">
+                    {Number(displayProduct.price).toLocaleString("fa-IR")} تومان
+                  </span>
+                </div>
+                <div className="size-12 rounded-xl bg-gold/10 border border-gold/20 flex items-center justify-center shrink-0">
+                  <Star className="size-6 text-gold fill-gold" />
+                </div>
+              </div>
+            </Link>
+          </div>
+
         </div>
       </div>
     </section>
-  );
-}
-
-function Stat({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="text-center lg:text-start">
-      <p className="text-2xl font-bold text-gold">{value}</p>
-      <p className="mt-1 text-xs text-muted-foreground">{label}</p>
-    </div>
   );
 }
