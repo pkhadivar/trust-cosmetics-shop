@@ -1,22 +1,20 @@
-// src/components/profile-tabs.tsx
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { User, MapPin, ShoppingBag, Shield, Phone, CheckCircle2, AlertCircle, Edit2, Trash2, X } from "lucide-react";
+import Image from "next/image"; // اضافه شده برای نمایش عکس محصولات
+import { User, MapPin, ShoppingBag, Shield, Phone, CheckCircle2, AlertCircle, Edit2, Trash2, X, Package, Clock, Truck } from "lucide-react";
 import Link from "next/link";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { Button } from "@/components/ui/button";
 
-// ----------------------------------------------------------------------
-// ایمپورت ایمن پکیج iran-city
 // ----------------------------------------------------------------------
 import * as iranCityPkg from "iran-city";
 const iranCity = (iranCityPkg as any).default || iranCityPkg;
 const provincesList = typeof iranCity.allProvinces === 'function' ? iranCity.allProvinces() : [];
 
 // ----------------------------------------------------------------------
-// کامپوننت اختصاصی Dropdown برای رفع باگ اسکرول و ظاهر نیتیو مرورگر
+// کامپوننت اختصاصی Dropdown
 // ----------------------------------------------------------------------
 function DropdownSelect({ value, onChange, options, placeholder, disabled }: any) {
   const [isOpen, setIsOpen] = useState(false);
@@ -67,6 +65,18 @@ function DropdownSelect({ value, onChange, options, placeholder, disabled }: any
 }
 
 // ----------------------------------------------------------------------
+// مپ کردن وضعیت سفارشات به رنگ و آیکون
+// ----------------------------------------------------------------------
+const statusMap: Record<string, { label: string; color: string; icon: any }> = {
+  PENDING: { label: "در انتظار پرداخت", color: "text-orange-500 bg-orange-500/10 border-orange-500/20", icon: Clock },
+  PAID: { label: "پرداخت شده", color: "text-blue-500 bg-blue-500/10 border-blue-500/20", icon: CheckCircle2 },
+  PROCESSING: { label: "در حال پردازش", color: "text-purple-500 bg-purple-500/10 border-purple-500/20", icon: Package },
+  SHIPPED: { label: "ارسال شده", color: "text-teal-500 bg-teal-500/10 border-teal-500/20", icon: Truck },
+  DELIVERED: { label: "تحویل داده", color: "text-green-500 bg-green-500/10 border-green-500/20", icon: CheckCircle2 },
+  CANCELLED: { label: "لغو شده", color: "text-red-500 bg-red-500/10 border-red-500/20", icon: X },
+};
+
+// ----------------------------------------------------------------------
 
 interface ProfileTabsProps {
   user: {
@@ -81,7 +91,7 @@ export function ProfileTabs({ user }: ProfileTabsProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"info" | "addresses" | "orders">("info");
   
-  // ۱. استیت‌های تب اطلاعات حساب
+  // ۱. استیت‌های اطلاعات حساب
   const [nameInput, setNameInput] = useState(user.name === "کاربر عزیز" ? "" : user.name || "");
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateMessage, setUpdateMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -90,17 +100,14 @@ export function ProfileTabs({ user }: ProfileTabsProps) {
     e.preventDefault();
     setIsUpdating(true);
     setUpdateMessage(null);
-
     try {
       const res = await fetch("/api/user/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: nameInput }),
       });
-
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "خطایی رخ داده است");
-
       setUpdateMessage({ type: "success", text: "نام شما با موفقیت ثبت شد!" });
       router.refresh(); 
     } catch (error: any) {
@@ -110,35 +117,29 @@ export function ProfileTabs({ user }: ProfileTabsProps) {
     }
   };
 
-  // ۲. استیت‌های تب آدرس‌ها
+  // ۲. استیت‌های آدرس‌ها
   const [addresses, setAddresses] = useState<any[]>([]);
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
   const [isSubmittingAddress, setIsSubmittingAddress] = useState(false);
-  
-  // استیت‌های مربوط به مودال حذف
   const [addressToDelete, setAddressToDelete] = useState<string | null>(null);
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
-  
   const [addressMessage, setAddressMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  
-  // استیت‌های ویرایش آدرس
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
-
   const [selectedProvinceId, setSelectedProvinceId] = useState<number | "">("");
-  const [addressForm, setAddressForm] = useState({ 
-    title: "", state: "", city: "", fullAddress: "", postalCode: "" 
-  });
+  const [addressForm, setAddressForm] = useState({ title: "", state: "", city: "", fullAddress: "", postalCode: "" });
 
   const cityOptions = useMemo(() => {
     if (!selectedProvinceId || typeof iranCity.citiesOfProvince !== 'function') return [];
-    return iranCity.citiesOfProvince(selectedProvinceId).map((c: any) => ({
-      label: c.name,
-      value: c.name
-    }));
+    return iranCity.citiesOfProvince(selectedProvinceId).map((c: any) => ({ label: c.name, value: c.name }));
   }, [selectedProvinceId]);
+
+  // ۳. استیت‌های تاریخچه سفارشات
+  const [orders, setOrders] = useState<any[]>([]);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(false);
 
   useEffect(() => {
     if (activeTab === "addresses") fetchAddresses();
+    if (activeTab === "orders") fetchOrders();
   }, [activeTab]);
 
   const fetchAddresses = async () => {
@@ -153,18 +154,25 @@ export function ProfileTabs({ user }: ProfileTabsProps) {
     }
   };
 
-  // ذخیره آدرس جدید یا ویرایش آدرس قبلی
+  const fetchOrders = async () => {
+    setIsLoadingOrders(true);
+    try {
+      const res = await fetch("/api/user/orders");
+      if (res.ok) setOrders(await res.json());
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    } finally {
+      setIsLoadingOrders(false);
+    }
+  };
+
   const handleSaveAddress = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmittingAddress(true);
     setAddressMessage(null);
-
     try {
       const method = editingAddressId ? "PUT" : "POST";
-      const payload = editingAddressId 
-        ? { ...addressForm, id: editingAddressId } 
-        : addressForm;
-
+      const payload = editingAddressId ? { ...addressForm, id: editingAddressId } : addressForm;
       const res = await fetch("/api/user/addresses", {
         method,
         headers: { "Content-Type": "application/json" },
@@ -172,13 +180,7 @@ export function ProfileTabs({ user }: ProfileTabsProps) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "خطایی رخ داده است");
-
-      setAddressMessage({ 
-        type: "success", 
-        text: editingAddressId ? "آدرس با موفقیت ویرایش شد!" : "آدرس با موفقیت ثبت شد!" 
-      });
-
-      // ریست فرم
+      setAddressMessage({ type: "success", text: editingAddressId ? "آدرس با موفقیت ویرایش شد!" : "آدرس با موفقیت ثبت شد!" });
       setAddressForm({ title: "", state: "", city: "", fullAddress: "", postalCode: "" }); 
       setSelectedProvinceId("");
       setEditingAddressId(null);
@@ -190,56 +192,36 @@ export function ProfileTabs({ user }: ProfileTabsProps) {
     }
   };
 
-  // تایید حذف آدرس از طریق مودال
   const confirmDeleteAddress = async () => {
     if (!addressToDelete) return;
-    
     setIsDeletingId(addressToDelete);
     setAddressMessage(null);
-
     try {
-      const res = await fetch(`/api/user/addresses?id=${addressToDelete}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(`/api/user/addresses?id=${addressToDelete}`, { method: "DELETE" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "خطا در حذف آدرس");
-
       setAddresses(addresses.filter(addr => addr.id !== addressToDelete));
       setAddressMessage({ type: "success", text: "آدرس با موفقیت حذف شد!" });
-
-      if (editingAddressId === addressToDelete) {
-        cancelEditing();
-      }
+      if (editingAddressId === addressToDelete) cancelEditing();
     } catch (error: any) {
       setAddressMessage({ type: "error", text: error.message });
     } finally {
       setIsDeletingId(null);
-      setAddressToDelete(null); // بستن مودال
+      setAddressToDelete(null);
     }
   };
 
-  // فعال کردن حالت ویرایش روی یک آدرس خاص
   const startEditing = (addr: any) => {
     setEditingAddressId(addr.id);
     setAddressForm({
-      title: addr.title,
-      state: addr.state,
-      city: addr.city,
-      fullAddress: addr.fullAddress,
-      postalCode: addr.postalCode,
+      title: addr.title, state: addr.state, city: addr.city, fullAddress: addr.fullAddress, postalCode: addr.postalCode,
     });
-
     const foundProvince = provincesList.find((p: any) => p.name === addr.state);
-    if (foundProvince) {
-      setSelectedProvinceId(foundProvince.id);
-    } else {
-      setSelectedProvinceId("");
-    }
-
+    if (foundProvince) setSelectedProvinceId(foundProvince.id);
+    else setSelectedProvinceId("");
     document.getElementById("address-form-section")?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // لغو حالت ویرایش
   const cancelEditing = () => {
     setEditingAddressId(null);
     setAddressForm({ title: "", state: "", city: "", fullAddress: "", postalCode: "" });
@@ -302,7 +284,6 @@ export function ProfileTabs({ user }: ProfileTabsProps) {
               <h3 className="text-lg font-bold">اطلاعات شخصی</h3>
               <p className="text-sm text-muted-foreground mt-1">مشخصات خود را وارد کنید تا در سفارشات از آن‌ها استفاده شود.</p>
             </div>
-            
             <form onSubmit={handleUpdateInfo} className="space-y-5 max-w-md">
               {updateMessage && (
                 <div className={`flex items-center gap-2 p-3 text-sm rounded-xl ${updateMessage.type === "success" ? "bg-green-500/10 text-green-600" : "bg-red-500/10 text-red-600"}`}>
@@ -336,7 +317,6 @@ export function ProfileTabs({ user }: ProfileTabsProps) {
               <p className="text-sm text-muted-foreground mt-1">آدرس‌های خود را برای ارسال سریع‌تر سفارشات مدیریت کنید.</p>
             </div>
 
-            {/* لیست آدرس‌ها */}
             {isLoadingAddresses ? (
               <p className="text-sm text-muted-foreground animate-pulse">در حال دریافت آدرس‌ها...</p>
             ) : addresses.length > 0 ? (
@@ -348,23 +328,11 @@ export function ProfileTabs({ user }: ProfileTabsProps) {
                     <p className="text-sm leading-relaxed text-foreground/80">{addr.fullAddress}</p>
                     <span className="text-xs text-muted-foreground mt-1">کد پستی: <span dir="ltr">{addr.postalCode}</span></span>
                     
-                    {/* دکمه‌های کنترل آدرس (ویرایش و باز کردن مودال حذف) */}
                     <div className="absolute top-4 left-4 flex items-center gap-2">
-                      <button 
-                        type="button" 
-                        onClick={() => startEditing(addr)} 
-                        className="p-1.5 text-foreground/70 hover:text-gold hover:bg-secondary rounded-lg transition-all"
-                        title="ویرایش آدرس"
-                      >
+                      <button type="button" onClick={() => startEditing(addr)} className="p-1.5 text-foreground/70 hover:text-gold hover:bg-secondary rounded-lg transition-all" title="ویرایش">
                         <Edit2 className="size-4" />
                       </button>
-                      <button 
-                        type="button" 
-                        onClick={() => setAddressToDelete(addr.id)} 
-                        disabled={isDeletingId === addr.id}
-                        className="p-1.5 text-foreground/70 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all disabled:opacity-50"
-                        title="حذف آدرس"
-                      >
+                      <button type="button" onClick={() => setAddressToDelete(addr.id)} disabled={isDeletingId === addr.id} className="p-1.5 text-foreground/70 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all disabled:opacity-50" title="حذف">
                         <Trash2 className="size-4 animate-none" />
                       </button>
                     </div>
@@ -386,13 +354,8 @@ export function ProfileTabs({ user }: ProfileTabsProps) {
                   {editingAddressId ? `ویرایش آدرس (${addressForm.title})` : "ثبت آدرس جدید"}
                 </h4>
                 {editingAddressId && (
-                  <button 
-                    type="button" 
-                    onClick={cancelEditing} 
-                    className="text-xs text-red-500 hover:text-red-600 flex items-center gap-1 font-bold bg-red-500/10 px-2.5 py-1.5 rounded-lg transition-all"
-                  >
-                    <X className="size-3" />
-                    انصراف از ویرایش
+                  <button type="button" onClick={cancelEditing} className="text-xs text-red-500 hover:text-red-600 flex items-center gap-1 font-bold bg-red-500/10 px-2.5 py-1.5 rounded-lg transition-all">
+                    <X className="size-3" /> انصراف
                   </button>
                 )}
               </div>
@@ -436,40 +399,23 @@ export function ProfileTabs({ user }: ProfileTabsProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-foreground">کد پستی (الزامی - ۱۰ رقمی)</label>
-                  <input 
-                    type="text" 
-                    maxLength={10} 
-                    minLength={10} 
-                    value={addressForm.postalCode} 
-                    onChange={(e) => setAddressForm({...addressForm, postalCode: e.target.value})} 
-                    placeholder="مثال: 1234567890" 
-                    className="w-full p-3 border border-border rounded-xl bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-gold transition-all text-right" 
-                    required 
-                  />
+                  <label className="text-sm font-semibold text-foreground">کد پستی (الزامی)</label>
+                  <input type="text" maxLength={10} minLength={10} value={addressForm.postalCode} onChange={(e) => setAddressForm({...addressForm, postalCode: e.target.value})} placeholder="مثال: 1234567890" className="w-full p-3 border border-border rounded-xl bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-gold transition-all text-right" required />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-foreground">آدرس پستی دقیق</label>
-                <textarea rows={3} value={addressForm.fullAddress} onChange={(e) => setAddressForm({...addressForm, fullAddress: e.target.value})} placeholder="نام خیابان، کوچه، پلاک، واحد..." className="w-full p-3 border border-border rounded-xl bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-gold transition-all resize-none text-right" required></textarea>
+                <textarea rows={3} value={addressForm.fullAddress} onChange={(e) => setAddressForm({...addressForm, fullAddress: e.target.value})} placeholder="نام خیابان، کوچه، پلاک..." className="w-full p-3 border border-border rounded-xl bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-gold transition-all resize-none text-right" required></textarea>
               </div>
 
               <div className="flex justify-end pt-2 gap-3">
                 {editingAddressId && (
-                  <Button 
-                    type="button" 
-                    onClick={cancelEditing} 
-                    className="w-full md:w-auto px-6 py-6 text-base bg-secondary text-foreground hover:bg-secondary/80 rounded-xl transition-all font-bold"
-                  >
+                  <Button type="button" onClick={cancelEditing} className="w-full md:w-auto px-6 py-6 text-base bg-secondary text-foreground hover:bg-secondary/80 rounded-xl transition-all font-bold">
                     انصراف
                   </Button>
                 )}
-                <Button 
-                  type="submit" 
-                  disabled={isSubmittingAddress || !addressForm.fullAddress.trim() || !addressForm.state || !addressForm.city || addressForm.postalCode.length !== 10} 
-                  className="w-full md:w-auto px-8 py-6 text-base bg-gold text-primary-foreground hover:bg-gold-soft rounded-xl transition-all font-bold"
-                >
+                <Button type="submit" disabled={isSubmittingAddress || !addressForm.fullAddress.trim() || !addressForm.state || !addressForm.city || addressForm.postalCode.length !== 10} className="w-full md:w-auto px-8 py-6 text-base bg-gold text-primary-foreground hover:bg-gold-soft rounded-xl transition-all font-bold">
                   {isSubmittingAddress ? "در حال پردازش..." : editingAddressId ? "بروزرسانی آدرس" : "ذخیره آدرس"}
                 </Button>
               </div>
@@ -477,20 +423,89 @@ export function ProfileTabs({ user }: ProfileTabsProps) {
           </div>
         )}
 
-        {/* تب سفارشات */}
+        {/* تب سفارشات (بخش جدید) */}
         {activeTab === "orders" && (
           <div className="space-y-6">
-            <h3 className="text-lg font-bold border-b border-border pb-4">تاریخچه سفارشات</h3>
-            <div className="bg-secondary/30 border border-border border-dashed rounded-2xl p-8 text-center">
-              <ShoppingBag className="size-8 mx-auto text-muted-foreground mb-3 opacity-50" />
-              <p className="text-sm text-muted-foreground">شما هنوز سفارشی ثبت نکرده‌اید.</p>
+            <div className="border-b border-border pb-4">
+              <h3 className="text-lg font-bold">تاریخچه سفارشات</h3>
+              <p className="text-sm text-muted-foreground mt-1">لیست تمامی خریدهای شما در فروشگاه.</p>
             </div>
+            
+            {isLoadingOrders ? (
+              <p className="text-sm text-muted-foreground animate-pulse">در حال دریافت سفارشات...</p>
+            ) : orders.length > 0 ? (
+              <div className="grid gap-6">
+                {orders.map((order) => {
+                  const StatusIcon = statusMap[order.status]?.icon || Clock;
+                  
+                  return (
+                    <div key={order.id} className="bg-background border border-border rounded-2xl p-5 md:p-6 transition-all hover:border-gold/30">
+                      {/* هدر سفارش */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/50 pb-5 mb-5">
+                        <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm">
+                          <div className="flex flex-col gap-1">
+                            <span className="text-muted-foreground text-xs">تاریخ ثبت سفارش</span>
+                            <span className="font-medium text-foreground">{new Date(order.createdAt).toLocaleDateString('fa-IR')}</span>
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <span className="text-muted-foreground text-xs">شماره سفارش</span>
+                            <span className="font-mono font-medium text-foreground">{order.id.slice(-8).toUpperCase()}</span>
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <span className="text-muted-foreground text-xs">مبلغ کل (با هزینه پست)</span>
+                            <span className="font-medium text-gold">{order.totalAmount.toLocaleString('fa-IR')} تومان</span>
+                          </div>
+                        </div>
+                        
+                        {/* بج وضعیت */}
+                        <div className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl border ${statusMap[order.status]?.color}`}>
+                          <StatusIcon className="size-4" />
+                          <span className="text-sm font-bold">{statusMap[order.status]?.label}</span>
+                        </div>
+                      </div>
+
+                      {/* آیتم‌های سفارش */}
+                      <div className="flex flex-wrap gap-4">
+                        {order.items.map((item: any) => (
+                          <div key={item.id} className="flex items-center gap-4 bg-secondary/20 rounded-xl p-3 border border-border/40 pr-4 w-full sm:w-auto">
+                            <div className="relative size-14 rounded-lg overflow-hidden bg-[#050810] border border-border shrink-0">
+                              <Image 
+                                src={item.product.images[0] || "/placeholder.jpg"} 
+                                alt={item.product.title} 
+                                fill 
+                                className="object-contain p-1"
+                              />
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-sm font-bold text-foreground line-clamp-1">{item.product.title}</span>
+                              <span className="text-xs text-muted-foreground mt-1">{item.price.toLocaleString('fa-IR')} تومان × {item.quantity} عدد</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {/* کد پیگیری */}
+                      {order.refId && (
+                        <div className="mt-5 pt-5 border-t border-border/50 flex items-center gap-2 text-sm text-muted-foreground bg-secondary/10 p-4 rounded-xl">
+                          کد پیگیری تراکنش بانکی: <span className="font-mono text-foreground font-medium">{order.refId}</span>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="bg-secondary/30 border border-border border-dashed rounded-2xl p-8 text-center">
+                <ShoppingBag className="size-8 mx-auto text-muted-foreground mb-3 opacity-50" />
+                <p className="text-sm text-muted-foreground">شما هنوز سفارشی ثبت نکرده‌اید.</p>
+              </div>
+            )}
           </div>
         )}
 
       </main>
 
-      {/* مودال تایید حذف آدرس */}
+      {/* مودال حذف آدرس (تغییری نکرده) */}
       {addressToDelete && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 transition-all">
           <div className="bg-card border border-border rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-in fade-in zoom-in-95 duration-200">
@@ -501,28 +516,13 @@ export function ProfileTabs({ user }: ProfileTabsProps) {
               <div className="space-y-1.5">
                 <h3 className="text-lg font-bold text-foreground">حذف آدرس</h3>
                 <p className="text-sm text-muted-foreground px-2">
-                  آیا از حذف این آدرس اطمینان دارید؟ این عملیات غیرقابل بازگشت است.
+                  آیا از حذف این آدرس اطمینان دارید؟
                 </p>
               </div>
             </div>
-            
             <div className="flex items-center gap-3 mt-8">
-              <Button
-                type="button"
-                onClick={() => setAddressToDelete(null)}
-                className="flex-1 p-6 bg-secondary text-foreground hover:bg-secondary/80 rounded-xl font-bold"
-                disabled={isDeletingId === addressToDelete}
-              >
-                انصراف
-              </Button>
-              <Button
-                type="button"
-                onClick={confirmDeleteAddress}
-                className="flex-1 p-6 bg-red-500 text-white hover:bg-red-600 rounded-xl font-bold"
-                disabled={isDeletingId === addressToDelete}
-              >
-                {isDeletingId === addressToDelete ? "در حال حذف..." : "بله، حذف کن"}
-              </Button>
+              <Button type="button" onClick={() => setAddressToDelete(null)} className="flex-1 p-6 bg-secondary text-foreground hover:bg-secondary/80 rounded-xl font-bold" disabled={isDeletingId === addressToDelete}>انصراف</Button>
+              <Button type="button" onClick={confirmDeleteAddress} className="flex-1 p-6 bg-red-500 text-white hover:bg-red-600 rounded-xl font-bold" disabled={isDeletingId === addressToDelete}>{isDeletingId === addressToDelete ? "در حال حذف..." : "بله، حذف کن"}</Button>
             </div>
           </div>
         </div>

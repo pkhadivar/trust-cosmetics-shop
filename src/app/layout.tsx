@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Vazirmatn } from "next/font/google";
 import { Providers } from "@/components/providers";
-import { SiteNavbar } from "@/components/site-navbar"; // ایمپورت هدر
-import { SiteFooter } from "@/components/site-footer"; // ایمپورت فوتر
+import { NextAuthProvider } from "@/components/NextAuthProvider";
+import { SiteNavbar } from "@/components/site-navbar"; 
+import { SiteFooter } from "@/components/site-footer"; 
+import { Toaster } from "react-hot-toast"; // 👈 این خط را اضافه کنید
 import "./globals.css";
 
 const vazirmatn = Vazirmatn({
@@ -11,16 +13,7 @@ const vazirmatn = Vazirmatn({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: "تراست | مراقبت پوست و مو لاکچری",
-  description:
-    "برند لاکچری مراقبت از پوست و مو. فرمولاسیون تخصصی، تاییدیه پزشکان و ترکیبات ارگانیک برای درخششی ماندگار.",
-  generator: "v0.app",
-};
-
-export const viewport: Viewport = {
-  themeColor: "#0B1120",
-};
+// ... بقیه کدهای متادیتا بدون تغییر ...
 
 export default function RootLayout({
   children,
@@ -30,18 +23,20 @@ export default function RootLayout({
   return (
     <html lang="fa" dir="rtl" className={`${vazirmatn.variable} bg-background`}>
       <body className="font-sans antialiased flex flex-col min-h-screen">
-        <Providers>
-          {/* هدر در بالای تمام صفحات */}
-          <SiteNavbar />
-          
-          {/* محتوای متغیر صفحات */}
-          <main className="flex-1">
-            {children}
-          </main>
-          
-          {/* فوتر در پایین تمام صفحات */}
-          <SiteFooter />
-        </Providers>
+        <NextAuthProvider>
+          <Providers>
+            {/* اضافه کردن کامپوننت توستر برای نمایش پیام‌ها */}
+            <Toaster position="top-center" toastOptions={{ duration: 4000 }} />
+            
+            <SiteNavbar />
+            
+            <main className="flex-1">
+              {children}
+            </main>
+            
+            <SiteFooter />
+          </Providers>
+        </NextAuthProvider>
       </body>
     </html>
   );

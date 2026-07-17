@@ -180,23 +180,55 @@ model Tag {
   updatedAt DateTime  @updatedAt
 }
 
+// ==========================================
+// Order & Payment Models (Updated)
+// ==========================================
+
 model Order {
-  id          String      @id @default(cuid())
-  userId      String
-  user        User        @relation(fields: [userId], references: [id])
-  totalAmount Int
-  status      OrderStatus @default(PENDING)
-  items       OrderItem[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id              String      @id @default(cuid())
+  userId          String
+  user            User        @relation(fields: [userId], references: [id])
+  
+  totalAmount     Int         // مبلغ کل پرداختی
+  shippingCost    Int         @default(0)
+  status          OrderStatus @default(PENDING)
+  
+  // اطلاعات درگاه پرداخت (زرین‌پال)
+  authority       String?     @unique // کد یکتای زرین‌پال قبل از پرداخت
+  refId           String?     // شماره پیگیری بعد از پرداخت موفق
+  
+  // اطلاعات خریدار و ارسال (ثبت ثابت در زمان خرید)
+  customerName    String?
+  customerPhone   String?
+  shippingState   String?
+  shippingCity    String?
+  shippingAddress String?     @db.Text
+  postalCode      String?
+  
+  items           OrderItem[]
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 }
 
 model OrderItem {
   id        String  @id @default(cuid())
+  
   orderId   String
-  order     Order   @relation(fields: [orderId], references: [id])
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
   productId String
   product   Product @relation(fields: [productId], references: [id])
+  
   quantity  Int
-  price     Int
+  price     Int     // قیمت محصول دقیقاً در لحظه خرید
+}
+
+// ==========================================
+// Settings Model (برای تنظیماتی مثل هزینه پست)
+// ==========================================
+model StoreSettings {
+  id           String   @id @default("global") // همیشه فقط یک رکورد با این آیدی داریم
+  shippingCost Int      @default(50000)        // هزینه پیش‌فرض پست (مثلا 50 هزار تومان)
+  updatedAt    DateTime @updatedAt
 }
