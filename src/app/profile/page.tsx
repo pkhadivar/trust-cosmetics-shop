@@ -22,13 +22,11 @@ export default async function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <SiteNavbar />
       
       <main className="flex-1 w-full mx-auto px-5 py-12">
         <ProfileTabs user={user} />
       </main>
 
-      <SiteFooter />
     </div>
   );
 }
