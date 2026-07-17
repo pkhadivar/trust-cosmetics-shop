@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image"; // اضافه شده برای نمایش عکس محصولات
-import { User, MapPin, ShoppingBag, Shield, Phone, CheckCircle2, AlertCircle, Edit2, Trash2, X, Package, Clock, Truck } from "lucide-react";
+import Image from "next/image";
+import { User, MapPin, ShoppingBag, Shield, Phone, CheckCircle2, AlertCircle, Edit2, Trash2, X, Package, Clock, Truck, Heart } from "lucide-react";
 import Link from "next/link";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { Button } from "@/components/ui/button";
@@ -65,14 +65,14 @@ function DropdownSelect({ value, onChange, options, placeholder, disabled }: any
 }
 
 // ----------------------------------------------------------------------
-// مپ کردن وضعیت سفارشات به رنگ و آیکون
+// مپ کردن وضعیت سفارشات
 // ----------------------------------------------------------------------
 const statusMap: Record<string, { label: string; color: string; icon: any }> = {
   PENDING: { label: "در انتظار پرداخت", color: "text-orange-500 bg-orange-500/10 border-orange-500/20", icon: Clock },
   PAID: { label: "پرداخت شده", color: "text-blue-500 bg-blue-500/10 border-blue-500/20", icon: CheckCircle2 },
   PROCESSING: { label: "در حال پردازش", color: "text-purple-500 bg-purple-500/10 border-purple-500/20", icon: Package },
   SHIPPED: { label: "ارسال شده", color: "text-teal-500 bg-teal-500/10 border-teal-500/20", icon: Truck },
-  DELIVERED: { label: "تحویل داده", color: "text-green-500 bg-green-500/10 border-green-500/20", icon: CheckCircle2 },
+  DELIVERED: { label: "تحویل داده شده", color: "text-green-500 bg-green-500/10 border-green-500/20", icon: CheckCircle2 },
   CANCELLED: { label: "لغو شده", color: "text-red-500 bg-red-500/10 border-red-500/20", icon: X },
 };
 
@@ -89,7 +89,7 @@ interface ProfileTabsProps {
 
 export function ProfileTabs({ user }: ProfileTabsProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"info" | "addresses" | "orders">("info");
+  const [activeTab, setActiveTab] = useState<"info" | "addresses" | "orders" | "wishlist">("info");
   
   // ۱. استیت‌های اطلاعات حساب
   const [nameInput, setNameInput] = useState(user.name === "کاربر عزیز" ? "" : user.name || "");
@@ -137,9 +137,14 @@ export function ProfileTabs({ user }: ProfileTabsProps) {
   const [orders, setOrders] = useState<any[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
 
+  // ۴. استیت‌های علاقه‌مندی‌ها
+  const [wishlist, setWishlist] = useState<any[]>([]);
+  const [isLoadingWishlist, setIsLoadingWishlist] = useState(false);
+
   useEffect(() => {
     if (activeTab === "addresses") fetchAddresses();
     if (activeTab === "orders") fetchOrders();
+    if (activeTab === "wishlist") fetchWishlist();
   }, [activeTab]);
 
   const fetchAddresses = async () => {
@@ -163,6 +168,18 @@ export function ProfileTabs({ user }: ProfileTabsProps) {
       console.error("Error fetching orders:", error);
     } finally {
       setIsLoadingOrders(false);
+    }
+  };
+
+  const fetchWishlist = async () => {
+    setIsLoadingWishlist(true);
+    try {
+      const res = await fetch("/api/user/wishlist");
+      if (res.ok) setWishlist(await res.json());
+    } catch (error) {
+      console.error("Error fetching wishlist:", error);
+    } finally {
+      setIsLoadingWishlist(false);
     }
   };
 
@@ -260,6 +277,10 @@ export function ProfileTabs({ user }: ProfileTabsProps) {
 
           <button onClick={() => { setActiveTab("orders"); cancelEditing(); }} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium ${activeTab === "orders" ? "bg-gold text-primary-foreground shadow-md" : "text-foreground/80 hover:bg-secondary"}`}>
             <ShoppingBag className="size-4" /> سفارشات من
+          </button>
+          
+          <button onClick={() => { setActiveTab("wishlist"); cancelEditing(); }} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium ${activeTab === "wishlist" ? "bg-gold text-primary-foreground shadow-md" : "text-foreground/80 hover:bg-secondary"}`}>
+            <Heart className="size-4" /> علاقه‌مندی‌ها
           </button>
 
           {user.role === "ADMIN" && (
@@ -423,7 +444,7 @@ export function ProfileTabs({ user }: ProfileTabsProps) {
           </div>
         )}
 
-        {/* تب سفارشات (بخش جدید) */}
+        {/* تب سفارشات */}
         {activeTab === "orders" && (
           <div className="space-y-6">
             <div className="border-b border-border pb-4">
@@ -440,7 +461,6 @@ export function ProfileTabs({ user }: ProfileTabsProps) {
                   
                   return (
                     <div key={order.id} className="bg-background border border-border rounded-2xl p-5 md:p-6 transition-all hover:border-gold/30">
-                      {/* هدر سفارش */}
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/50 pb-5 mb-5">
                         <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm">
                           <div className="flex flex-col gap-1">
@@ -457,14 +477,12 @@ export function ProfileTabs({ user }: ProfileTabsProps) {
                           </div>
                         </div>
                         
-                        {/* بج وضعیت */}
                         <div className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl border ${statusMap[order.status]?.color}`}>
                           <StatusIcon className="size-4" />
                           <span className="text-sm font-bold">{statusMap[order.status]?.label}</span>
                         </div>
                       </div>
 
-                      {/* آیتم‌های سفارش */}
                       <div className="flex flex-wrap gap-4">
                         {order.items.map((item: any) => (
                           <div key={item.id} className="flex items-center gap-4 bg-secondary/20 rounded-xl p-3 border border-border/40 pr-4 w-full sm:w-auto">
@@ -484,7 +502,6 @@ export function ProfileTabs({ user }: ProfileTabsProps) {
                         ))}
                       </div>
                       
-                      {/* کد پیگیری */}
                       {order.refId && (
                         <div className="mt-5 pt-5 border-t border-border/50 flex items-center gap-2 text-sm text-muted-foreground bg-secondary/10 p-4 rounded-xl">
                           کد پیگیری تراکنش بانکی: <span className="font-mono text-foreground font-medium">{order.refId}</span>
@@ -503,9 +520,54 @@ export function ProfileTabs({ user }: ProfileTabsProps) {
           </div>
         )}
 
+        {/* تب علاقه‌مندی‌ها */}
+        {activeTab === "wishlist" && (
+          <div className="space-y-6">
+            <div className="border-b border-border pb-4">
+              <h3 className="text-lg font-bold">علاقه‌مندی‌های من</h3>
+              <p className="text-sm text-muted-foreground mt-1">محصولاتی که برای بررسی یا خرید در آینده ذخیره کرده‌اید.</p>
+            </div>
+            
+            {isLoadingWishlist ? (
+              <p className="text-sm text-muted-foreground animate-pulse">در حال دریافت لیست علاقه‌مندی‌ها...</p>
+            ) : wishlist.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {wishlist.map((item) => (
+                  <div key={item.id} className="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card p-4 transition-all hover:border-gold/50">
+                    <Link href={`/products/${item.id}`} className="relative block aspect-square overflow-hidden rounded-xl bg-[#050810]">
+                      <Image src={item.images[0] || "/placeholder.jpg"} alt={item.title} fill className="object-contain p-4 transition-transform group-hover:scale-110" />
+                    </Link>
+                    <Link href={`/products/${item.id}`} className="mt-4 text-sm font-bold hover:text-gold line-clamp-1">
+                      {item.title}
+                    </Link>
+                    <div className="mt-2 text-gold font-bold text-sm flex items-center gap-2">
+                      {item.discountedPrice && (
+                        <span className="text-xs text-muted-foreground line-through">
+                          {item.price.toLocaleString('fa-IR')}
+                        </span>
+                      )}
+                      <span>
+                        {(item.discountedPrice || item.price).toLocaleString('fa-IR')} تومان
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-secondary/30 border border-border border-dashed rounded-2xl p-8 text-center">
+                <Heart className="size-8 mx-auto text-muted-foreground mb-3 opacity-50" />
+                <p className="text-sm text-muted-foreground">شما هنوز هیچ محصولی را ذخیره نکرده‌اید.</p>
+                <button onClick={() => router.push("/#products")} className="mt-4 text-sm font-bold text-gold hover:underline">
+                  مشاهده محصولات
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
       </main>
 
-      {/* مودال حذف آدرس (تغییری نکرده) */}
+      {/* مودال حذف آدرس */}
       {addressToDelete && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 transition-all">
           <div className="bg-card border border-border rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-in fade-in zoom-in-95 duration-200">

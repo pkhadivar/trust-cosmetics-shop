@@ -39,7 +39,7 @@ model User {
   orders        Order[]
   accounts      Account[] // ارتباط با اکانت‌های NextAuth
   sessions      Session[] // ارتباط با سشن‌های NextAuth
-  
+  savedProducts Product[] @relation("UserWishlist")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -115,6 +115,7 @@ model Product {
   id              String      @id @default(cuid())
   title           String
   slug            String      @unique
+  savedByUsers    User[]      @relation("UserWishlist")
   subtitle        String?     
   description     String      @db.Text      
   richDescription String?     @db.Text 
