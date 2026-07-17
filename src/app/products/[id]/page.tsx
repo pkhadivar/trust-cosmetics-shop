@@ -1,10 +1,11 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { SiteNavbar } from "@/components/site-navbar";
-import { SiteFooter } from "@/components/site-footer";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route"; // مسیر تنظیمات NextAuth خود را چک کنید
 import { ProductGallery } from "@/components/product-gallery";
 import { AddToCartAction } from "@/components/add-to-cart-action";
-import { ProductTabs } from "@/components/product-tabs"; // <--- ایمپورت کامپوننت تب‌ها
+import { ProductTabs } from "@/components/product-tabs";
+import { WishlistShareButtons } from "@/components/wishlist-share-buttons"; // ایمپورت دکمه‌های جدید
 import { ShieldCheck, Truck, Sparkles, CheckCircle2 } from "lucide-react";
 
 type ProductPageProps = {
@@ -17,23 +18,31 @@ function formatPrice(amount: number): string {
 
 export default async function ProductDetailPage({ params }: ProductPageProps) {
   const { id } = await params;
+  
+  // بررسی سشن کاربر برای تشخیص لایک بودن محصول
+  const session = await getServerSession(authOptions);
+  const userId = (session?.user as any)?.id;
 
-  // اضافه کردن جداول جدید به کوئری پریزما
   const product = await prisma.product.findUnique({
     where: { id },
     include: { 
       category: true,
       tags: true,
-      attributes: true, // <--- واکشی مشخصات فنی
-      faqs: true,       // <--- واکشی سوالات متداول
-      reviews: {        // <--- واکشی نظرات (فقط تایید شده‌ها)
+      attributes: true, 
+      faqs: true,       
+      reviews: {        
         where: { isApproved: true },
-        orderBy: { createdAt: 'desc' } // جدیدترین‌ها در ابتدا
-      }
+        orderBy: { createdAt: 'desc' } 
+      },
+      // اگر کاربر لاگین بود، چک کن آیا آیدی او در لیست لایک‌کنندگان این محصول هست یا نه
+      savedByUsers: userId ? { where: { id: userId } } : false,
     }
   });
 
   if (!product) notFound();
+
+  // بررسی وضعیت لایک اولیه
+  const initialIsSaved = product.savedByUsers && product.savedByUsers.length > 0;
 
   const activePrice = product.discountedPrice ?? product.price;
 
@@ -54,28 +63,33 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      
       <main className="mx-auto max-w-7xl px-5 py-12 sm:px-8 lg:py-20">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-start">
           
-          {/* ستون راست: گالری تصاویر */}
           <div className="w-full">
             <ProductGallery images={product.images} title={product.title} />
           </div>
 
-          {/* ستون چپ: اطلاعات کالا */}
           <div className="flex flex-col">
-            <div className="flex items-center gap-3 flex-wrap">
-              <span className="text-xs font-semibold text-gold bg-gold/10 px-3 py-1 rounded-full border border-gold/20">
-                {product.category.name}
-              </span>
-              
-              {product.tags && product.tags.length > 0 && product.tags.map((tag) => (
-                <span key={tag.id} className="text-xs font-medium text-[#0a0f1c] bg-gold px-2.5 py-1 rounded-md flex items-center gap-1 shadow-sm">
-                  <Sparkles className="size-3" />
-                  {tag.name}
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="text-xs font-semibold text-gold bg-gold/10 px-3 py-1 rounded-full border border-gold/20">
+                  {product.category.name}
                 </span>
-              ))}
+                
+                {product.tags && product.tags.length > 0 && product.tags.map((tag) => (
+                  <span key={tag.id} className="text-xs font-medium text-[#0a0f1c] bg-gold px-2.5 py-1 rounded-md flex items-center gap-1 shadow-sm">
+                    <Sparkles className="size-3" />
+                    {tag.name}
+                  </span>
+                ))}
+              </div>
+
+              {/* دکمه‌های لایک و اشتراک‌گذاری */}
+              <WishlistShareButtons 
+                productId={product.id} 
+                productTitle={product.title} 
+              />
             </div>
 
             <h1 className="mt-5 text-3xl font-bold text-foreground leading-tight sm:text-4xl">
@@ -90,7 +104,6 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
             <div className="mt-6 h-px w-full bg-border/40" />
 
-            {/* Bullet Points (ویژگی‌های محصول) */}
             {bulletPoints.length > 0 && (
               <ul className="mt-6 space-y-3">
                 {bulletPoints.map((point, idx) => (
@@ -102,7 +115,6 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
               </ul>
             )}
 
-            {/* قیمت */}
             <div className="mt-8 flex flex-col gap-1">
               <span className="text-xs text-muted-foreground">قیمت مصرف‌کننده:</span>
               <div className="flex items-baseline gap-3">
@@ -117,10 +129,8 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
               </div>
             </div>
 
-            {/* دکمه ادد تو کارت متصل به Redux */}
             <AddToCartAction product={cleanProductForCart as any} />
 
-            {/* مزایای رقابتی */}
             <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-2xl border border-border/40 bg-secondary/20 p-4">
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 <ShieldCheck className="size-5 text-gold shrink-0" />
@@ -135,13 +145,12 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
           </div>
         </div>
 
-        {/* کامپوننت تب‌ها در زیر بخش اصلی */}
         <ProductTabs 
           productId={product.id}
           description={product.richDescription}
           attributes={product.attributes}
           faqs={product.faqs}
-          videoUrls={product.videoUrls} // <--- تغییر یافت: هماهنگ با ساختار جدید آرایه‌ای در Prisma
+          videoUrls={product.videoUrls} 
           reviews={product.reviews}
         />
 
