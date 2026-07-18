@@ -5,7 +5,7 @@ import { SiteNavbar } from '@/components/site-navbar';
 import { SiteFooter } from '@/components/site-footer';
 import { ProductCard } from '@/components/product-card';
 import { ShopFilters } from '@/components/shop/shop-filters';
-import { ShopSort } from '@/components/shop/shop-sort'; // <--- ایمپورت کامپوننت جدید
+import { ShopSort } from '@/components/shop/shop-sort';
 
 export default async function ShopPage({ 
   searchParams 
@@ -17,10 +17,11 @@ export default async function ShopPage({
   const q = typeof resolvedParams.q === 'string' ? resolvedParams.q : undefined;
   const categoryId = typeof resolvedParams.category === 'string' ? resolvedParams.category : undefined;
   const inStock = resolvedParams.inStock === 'true';
+  // دریافت پارامتر تخفیف از URL
+  const isDiscounted = resolvedParams.discount === 'true';
   const tagQuery = resolvedParams.tag;
   const tags = Array.isArray(tagQuery) ? tagQuery : typeof tagQuery === 'string' ? [tagQuery] : [];
   
-  // استخراج پارامتر مرتب‌سازی از URL
   const sortParam = typeof resolvedParams.sort === 'string' ? resolvedParams.sort : 'newest';
 
   const whereClause: any = {};
@@ -40,13 +41,16 @@ export default async function ShopPage({
   if (inStock) {
     whereClause.isAvailable = true;
   }
+  // اگر discount=true بود، فقط کالاهایی را بیاور که قیمت تخفیف‌خورده آن‌ها خالی (null) نیست
+  if (isDiscounted) {
+    whereClause.discountedPrice = { not: null };
+  }
 
-  // تنظیم داینامیک نحوه مرتب‌سازی بر اساس انتخاب کاربر
-  let orderByClause: any = { createdAt: 'desc' }; // پیش‌فرض: جدیدترین‌ها
+  let orderByClause: any = { createdAt: 'desc' };
   if (sortParam === 'price-asc') {
-    orderByClause = { price: 'asc' }; // ارزان‌ترین
+    orderByClause = { price: 'asc' };
   } else if (sortParam === 'price-desc') {
-    orderByClause = { price: 'desc' }; // گران‌ترین
+    orderByClause = { price: 'desc' };
   }
 
   const [categories, allTags, products] = await Promise.all([
@@ -54,7 +58,7 @@ export default async function ShopPage({
     prisma.tag.findMany({ orderBy: { name: 'asc' } }),
     prisma.product.findMany({
       where: whereClause,
-      orderBy: orderByClause, // <--- اعمال منطق مرتب‌سازی به دیتابیس
+      orderBy: orderByClause,
       include: { tags: true }
     })
   ]);
@@ -79,8 +83,12 @@ export default async function ShopPage({
             فروشگاه <span className="text-gold">تراست</span>
           </h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            محصولات مراقبتی و آرایشی با بالاترین کیفیت برای پوست و موی شما. 
-            با استفاده از فیلترهای زیر، محصول مورد نیاز خود را به راحتی پیدا کنید.
+            {/* اگر در حالت تخفیف بودیم، پیام مناسب‌تری نمایش می‌دهیم */}
+            {isDiscounted ? (
+              <span className="text-gold font-medium">✨ مشاهده محصولات دارای تخفیف ویژه ✨</span>
+            ) : (
+              "محصولات مراقبتی و آرایشی با بالاترین کیفیت برای پوست و موی شما. با استفاده از فیلترهای زیر، محصول مورد نیاز خود را به راحتی پیدا کنید."
+            )}
           </p>
         </div>
       </div>
@@ -95,7 +103,6 @@ export default async function ShopPage({
               نمایش <strong className="text-gold">{formattedProducts.length}</strong> محصول
             </span>
             
-            {/* استفاده از کامپوننت داینامیک مرتب‌سازی */}
             <ShopSort />
 
           </div>

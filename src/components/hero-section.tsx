@@ -18,14 +18,19 @@ export async function HeroSection() {
     orderBy: { createdAt: 'desc' },
   });
 
-  // مقادیر Fallback برای جلوگیری از ارور در صورت خالی بودن دیتابیس
+  // مقادیر Fallback به همراه اضافه شدن فیلد discountedPrice
   const displayProduct = {
     id: heroProduct?.id || "fallback-id",
     title: heroProduct?.title || "کرم خاویار تراست اسمارت",
     price: heroProduct?.price || 7470000,
-    // دریافت اولین عکس از آرایه تصاویر
+    discountedPrice: heroProduct?.discountedPrice || null,
     imageUrl: heroProduct?.images?.[0] || "https://placehold.co/600x800/1A2235/D4AF37/png?text=Trust+Product", 
   };
+
+  // محاسبه درصد تخفیف (در صورت وجود)
+  const discountPercent = displayProduct.discountedPrice 
+    ? Math.round(((displayProduct.price - displayProduct.discountedPrice) / displayProduct.price) * 100)
+    : 0;
 
   return (
     <section className="relative overflow-hidden bg-[#0B1120] py-16 lg:py-24">
@@ -95,6 +100,13 @@ export async function HeroSection() {
               href={`/products/${displayProduct.id}`}
               className="group/hero-img block relative w-full max-w-md aspect-[4/5]"
             >
+              {/* بج درصد تخفیف (در صورت وجود تخفیف نمایش داده می‌شود) */}
+              {discountPercent > 0 && (
+                <div className="absolute top-4 right-4 z-30 rounded-full bg-emerald-500 px-4 py-1.5 text-sm font-bold text-white shadow-[0_2px_15px_rgba(16,185,129,0.4)]">
+                  {discountPercent}٪ تخفیف
+                </div>
+              )}
+
               <div className="absolute inset-0 bg-[#050810] rounded-3xl shadow-2xl overflow-hidden opacity-90 group-hover/hero-img:opacity-100 transition-all duration-500">
                 <Image
                   src={displayProduct.imageUrl}
@@ -106,16 +118,26 @@ export async function HeroSection() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
               </div>
 
+              {/* باکس شناور قیمت و عنوان */}
               <div className="absolute -bottom-6 -left-6 md:bottom-8 md:-left-12 bg-[#1A2235]/90 backdrop-blur-md border border-white/10 rounded-2xl p-5 shadow-2xl flex items-center gap-4 transition-transform group-hover/hero-img:-translate-y-2 z-20">
-                <div className="flex flex-col text-right">
-                  <span className="text-white font-bold text-lg mb-1 transition-colors group-hover/hero-img:text-gold">
+                <div className="flex flex-col text-right gap-1">
+                  <span className="text-white font-bold text-lg transition-colors group-hover/hero-img:text-gold">
                     {displayProduct.title}
                   </span>
-                  <span className="text-gold font-medium text-sm">
-                    {Number(displayProduct.price).toLocaleString("fa-IR")} تومان
-                  </span>
+                  
+                  {/* لی‌آوت جدید نمایش قیمت‌ها */}
+                  <div className="flex flex-col gap-0.5">
+                    {displayProduct.discountedPrice && (
+                      <span className="text-[13px] font-medium text-white/50 line-through decoration-red-500/80 decoration-2 w-fit">
+                        {Number(displayProduct.price).toLocaleString("fa-IR")}
+                      </span>
+                    )}
+                    <span className="text-gold font-bold text-[15px]">
+                      {Number(displayProduct.discountedPrice || displayProduct.price).toLocaleString("fa-IR")} تومان
+                    </span>
+                  </div>
                 </div>
-                <div className="size-12 rounded-xl bg-gold/10 border border-gold/20 flex items-center justify-center shrink-0">
+                <div className="size-12 rounded-xl bg-gold/10 border border-gold/20 flex items-center justify-center shrink-0 self-end">
                   <Star className="size-6 text-gold fill-gold" />
                 </div>
               </div>

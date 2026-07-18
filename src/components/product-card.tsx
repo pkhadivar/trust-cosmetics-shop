@@ -18,7 +18,6 @@ export function ProductCard({ product }: { product: CartProduct & { tags?: strin
   const dispatch = useDispatch();
   const { data: session } = useSession();
   
-  // خواندن لیست آیدی‌های لایک شده از استور سراسری
   const savedProductIds = useSelector((state: RootState) => selectSavedProductIds(state));
   const isSaved = savedProductIds.includes(product.id);
   
@@ -42,11 +41,8 @@ export function ProductCard({ product }: { product: CartProduct & { tags?: strin
       toast.success("به سبد خرید اضافه شد!");
   }
 
-  // ----------------------------------------------------
-  // هندلر لایک (متصل به Redux)
-  // ----------------------------------------------------
   const handleToggleSave = async (e: React.MouseEvent) => {
-    e.preventDefault(); // جلوگیری از کلیک شدن تصادفی روی لینک محصول
+    e.preventDefault(); 
     
     const userId = (session?.user as any)?.id;
     if (!userId) {
@@ -55,7 +51,6 @@ export function ProductCard({ product }: { product: CartProduct & { tags?: strin
     }
 
     setIsPending(true);
-    // آپدیت آنی (Optimistic) در کل سایت از طریق Redux
     dispatch(toggleWishlistItem(product.id));
 
     const result = await toggleWishlistAction(product.id, userId);
@@ -63,7 +58,6 @@ export function ProductCard({ product }: { product: CartProduct & { tags?: strin
     if (result.success) {
       toast.success(isSaved ? "از لیست علاقه‌مندی‌ها حذف شد" : "به لیست علاقه‌مندی‌ها اضافه شد");
     } else {
-      // اگر سرور خطا داد، لایک را در استور برمی‌گردانیم
       dispatch(toggleWishlistItem(product.id));
       toast.error(result.error || "خطایی رخ داد");
     }
@@ -75,9 +69,7 @@ export function ProductCard({ product }: { product: CartProduct & { tags?: strin
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-3xl border border-border bg-card transition-all duration-300 hover:border-gold/50 hover:shadow-[0_0_50px_-15px_rgba(212,175,55,0.45)]">
       
-      {/* ------------------------------------------------- */}
-      {/* دکمه قلب ظریف در گوشه چپ */}
-      {/* ------------------------------------------------- */}
+      {/* دکمه قلب */}
       <div className="absolute start-4 top-4 z-20">
         <button 
           onClick={handleToggleSave}
@@ -95,8 +87,9 @@ export function ProductCard({ product }: { product: CartProduct & { tags?: strin
 
       {/* بخش نمایش برچسب‌ها (سمت راست) */}
       <div className="pointer-events-none absolute end-4 top-4 z-10 flex flex-wrap justify-end gap-1.5 max-w-[75%]">
+        {/* تغییر رنگ بج تخفیف به سبز */}
         {discountPercent > 0 && (
-          <span className="rounded-full bg-red-600 px-3 py-1 text-xs font-semibold text-white shadow-md">
+          <span className="rounded-full bg-emerald-500 px-3 py-1 text-xs font-bold text-white shadow-[0_2px_10px_rgba(16,185,129,0.3)]">
             {discountPercent}% تخفیف
           </span>
         )}
@@ -132,26 +125,27 @@ export function ProductCard({ product }: { product: CartProduct & { tags?: strin
           {product.subtitle || ""}
         </p>
 
-        <div className="mt-5 flex items-center justify-between gap-3">
-          <div className="flex flex-col gap-0.5">
+        {/* بهبود استایل و لی‌آوت قیمت‌ها */}
+        <div className="mt-5 flex items-end justify-between gap-3">
+          <div className="flex flex-col gap-1.5">
             {discountPercent > 0 && (
-              <span className="text-xs text-muted-foreground line-through">
+              <span className="text-[13px] font-medium text-foreground/70 line-through decoration-red-500/80 decoration-2 pr-1">
                 {product.price.toLocaleString("fa-IR")}
               </span>
             )}
             
-            <div className="rounded-xl border border-gold/30 bg-gold/10 px-3 py-1.5">
-              <span className="text-sm font-bold text-gold">
+            <div className="flex items-center gap-1.5 rounded-xl border border-gold/40 bg-gold/10 px-3 py-1.5 shadow-sm">
+              <span className="text-[15px] font-bold text-gold">
                 {(product.discountedPrice || product.price).toLocaleString("fa-IR")}
               </span>
-              <span className="ms-1 text-xs text-gold/80">تومان</span>
+              <span className="text-xs font-medium text-gold/80">تومان</span>
             </div>
           </div>
 
           <button
             type="button"
             onClick={handleAddToCart}
-            className="relative z-10 flex items-center gap-1.5 rounded-xl bg-secondary px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-gold hover:text-primary-foreground"
+            className="relative z-10 mb-0.5 flex items-center gap-1.5 rounded-xl bg-secondary px-3.5 py-2 text-xs font-bold text-foreground transition-all hover:bg-gold hover:text-[#0a0f1c] hover:shadow-md"
           >
             <Plus className="size-4" />
             افزودن
