@@ -4,7 +4,8 @@ import { Providers } from "@/components/providers";
 import { NextAuthProvider } from "@/components/NextAuthProvider";
 import { SiteNavbar } from "@/components/site-navbar"; 
 import { SiteFooter } from "@/components/site-footer"; 
-import { Toaster } from "react-hot-toast"; // 👈 این خط را اضافه کنید
+import { getStoreSettings } from "@/actions/settings"; // 👈 اضافه شد
+import { CampaignBanner } from "@/components/campaign-banner"; // 👈 اضافه شد
 import "./globals.css";
 
 const vazirmatn = Vazirmatn({
@@ -13,20 +14,41 @@ const vazirmatn = Vazirmatn({
   display: "swap",
 });
 
-// ... بقیه کدهای متادیتا بدون تغییر ...
+// ... کدهای متادیتا شما در اینجا ...
 
-export default function RootLayout({
+// 👈 کلمه async را برای دریافت اطلاعات از سرور اضافه کردیم
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  
+  // 👈 دریافت تنظیمات بنر از دیتابیس در بالاترین لایه سایت
+  const settings: any = await getStoreSettings();
+  
+  // 👈 بررسی می‌کنیم که آیا بنر فعال است و زمان آن هنوز به پایان نرسیده است؟
+// 👈 این بخش را با کد زیر جایگزین کنید تا تایپ‌اسکریپت راضی شود
+  const isCampaignValid = 
+    settings?.campaignIsActive && 
+    settings?.campaignTitle && 
+    settings?.campaignEndDate && 
+    new Date(settings.campaignEndDate).getTime() > new Date().getTime();
+
   return (
     <html lang="fa" dir="rtl" className={`${vazirmatn.variable} bg-background`}>
       <body className="font-sans antialiased flex flex-col min-h-screen">
         <NextAuthProvider>
           <Providers>
-            {/* اضافه کردن کامپوننت توستر برای نمایش پیام‌ها */}
-            <Toaster position="top-center" toastOptions={{ duration: 4000 }} />
+            {/* کامپوننت توستر برای نمایش پیام‌ها */}
+            
+            {/* 👈 نمایش بنر تایمردار دقیقاً بالای هدر سایت */}
+            {isCampaignValid && (
+              <CampaignBanner 
+                title={settings.campaignTitle!} 
+                endDate={settings.campaignEndDate!} 
+                link={settings.campaignLink!} 
+              />
+            )}
             
             <SiteNavbar />
             

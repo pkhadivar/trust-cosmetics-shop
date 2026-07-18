@@ -228,8 +228,19 @@ model OrderItem {
 // ==========================================
 // Settings Model (برای تنظیماتی مثل هزینه پست)
 // ==========================================
+// ==========================================
+// Settings Model (برای تنظیماتی مثل هزینه پست)
+// ==========================================
 model StoreSettings {
-  id           String   @id @default("global") // همیشه فقط یک رکورد با این آیدی داریم
-  shippingCost Int      @default(50000)        // هزینه پیش‌فرض پست (مثلا 50 هزار تومان)
-  updatedAt    DateTime @updatedAt
+  id               String    @id @default("global")
+  shippingCost     Int       @default(50000)
+
+  // 👇 این خط مهم در فایل شما جا افتاده بود
+  campaignIsActive Boolean   @default(false) 
+
+  campaignTitle    String?   
+  campaignEndDate  DateTime? 
+  campaignLink     String?   
+  
+  updatedAt        DateTime  @updatedAt
 }
