@@ -5,8 +5,8 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route"; // مسیر ت
 import { ProductGallery } from "@/components/product-gallery";
 import { AddToCartAction } from "@/components/add-to-cart-action";
 import { ProductTabs } from "@/components/product-tabs";
-import { WishlistShareButtons } from "@/components/wishlist-share-buttons"; // ایمپورت دکمه‌های جدید
-import { ShieldCheck, Truck, Sparkles, CheckCircle2 } from "lucide-react";
+import { WishlistShareButtons } from "@/components/wishlist-share-buttons";
+import { ShieldCheck, Truck, Sparkles, CheckCircle2, Ban } from "lucide-react";
 
 type ProductPageProps = {
   params: Promise<{ id: string }>;
@@ -44,6 +44,9 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   // بررسی وضعیت لایک اولیه
   const initialIsSaved = product.savedByUsers && product.savedByUsers.length > 0;
 
+  // بررسی وضعیت موجودی محصول
+  const isOutOfStock = product.isAvailable === false;
+
   const activePrice = product.discountedPrice ?? product.price;
 
   const bulletPoints = product.description
@@ -66,7 +69,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
       <main className="mx-auto max-w-7xl px-5 py-12 sm:px-8 lg:py-20">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-start">
           
-          <div className="w-full">
+          <div className={`w-full transition-opacity duration-300 ${isOutOfStock ? "opacity-75" : ""}`}>
             <ProductGallery images={product.images} title={product.title} />
           </div>
 
@@ -92,7 +95,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
               />
             </div>
 
-            <h1 className="mt-5 text-3xl font-bold text-foreground leading-tight sm:text-4xl">
+            <h1 className={`mt-5 text-3xl font-bold leading-tight sm:text-4xl ${isOutOfStock ? "text-muted-foreground" : "text-foreground"}`}>
               {product.title}
             </h1>
             
@@ -108,7 +111,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
               <ul className="mt-6 space-y-3">
                 {bulletPoints.map((point, idx) => (
                   <li key={idx} className="flex items-start gap-2.5 text-sm text-foreground/90 leading-relaxed">
-                    <CheckCircle2 className="size-4 text-gold shrink-0 mt-0.5 opacity-80" />
+                    <CheckCircle2 className={`size-4 shrink-0 mt-0.5 opacity-80 ${isOutOfStock ? "text-muted-foreground" : "text-gold"}`} />
                     <span>{point}</span>
                   </li>
                 ))}
@@ -118,26 +121,35 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
             <div className="mt-8 flex flex-col gap-1">
               <span className="text-xs text-muted-foreground">قیمت مصرف‌کننده:</span>
               <div className="flex items-baseline gap-3">
-                {product.discountedPrice && (
+                {product.discountedPrice && !isOutOfStock && (
                   <span className="text-sm text-muted-foreground line-through decoration-destructive/60">
                     {formatPrice(product.price)}
                   </span>
                 )}
-                <span className="text-3xl font-black text-gold">
+                <span className={`text-3xl font-black ${isOutOfStock ? "text-muted-foreground" : "text-gold"}`}>
                   {formatPrice(activePrice)}
                 </span>
               </div>
             </div>
 
-            <AddToCartAction product={cleanProductForCart as any} />
+            <div className="mt-6">
+              {isOutOfStock ? (
+                <div className="w-full py-4 rounded-xl bg-secondary/50 text-muted-foreground font-bold text-lg border border-border cursor-not-allowed flex items-center justify-center gap-2">
+                  <Ban className="size-5" />
+                  این محصول در حال حاضر ناموجود است
+                </div>
+              ) : (
+                <AddToCartAction product={cleanProductForCart as any} />
+              )}
+            </div>
 
             <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-2xl border border-border/40 bg-secondary/20 p-4">
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <ShieldCheck className="size-5 text-gold shrink-0" />
+                <ShieldCheck className={`size-5 shrink-0 ${isOutOfStock ? "text-muted-foreground" : "text-gold"}`} />
                 <span>تضمین اصالت کالا — خرید اورجینال</span>
               </div>
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <Truck className="size-5 text-gold shrink-0" />
+                <Truck className={`size-5 shrink-0 ${isOutOfStock ? "text-muted-foreground" : "text-gold"}`} />
                 <span>ارسال رایگان برای سفارش‌های بالای ۴ میلیون</span>
               </div>
             </div>

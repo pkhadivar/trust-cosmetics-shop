@@ -6,11 +6,11 @@ export async function ProductShowcase() {
   // ۱. دریافت محصولات منتخب به همراه برچسب‌های (Tags) متصل به آن‌ها
   const featuredProducts = await prisma.product.findMany({
     where: { 
-      isAvailable: true,
+      // isAvailable: true, 👈 نکته: اگر می‌خواهید محصولات ناموجود هم به عنوان منتخب نمایش داده شوند اما با ظاهر خاکستری، این خط را کامنت کنید. اگر می‌خواهید کلا پنهان شوند، بگذارید بماند.
       isFeatured: true 
     },
     include: {
-      tags: true // <--- لود کردن تگ‌ها از دیتابیس
+      tags: true 
     },
     orderBy: { 
       createdAt: 'desc' 
@@ -19,7 +19,6 @@ export async function ProductShowcase() {
   });
 
   // ۲. تبدیل فرمت دیتای دیتابیس به فرمت تمیز مورد نیاز ProductCard و ریداکس
-  // نام اولین تگ محصول به عنوان برچسب (badge) روی کارت قرار می‌گیرد
   const formattedProducts = featuredProducts.map((product) => ({
     id: product.id,
     title: product.title,
@@ -27,8 +26,9 @@ export async function ProductShowcase() {
     price: product.price,
     discountedPrice: product.discountedPrice,
     images: product.images,
-    badge: product.tags?.[0]?.name || null, // حفظ برای پشتیبانی از ریداکس
-    tags: product.tags.map(t => t.name),    // <--- اضافه شد: پاس دادن تمام تگ‌ها به صورت آرایه
+    badge: product.tags?.[0]?.name || null, 
+    tags: product.tags.map(t => t.name),    
+    isAvailable: product.isAvailable, // 👈 فیلد وضعیت موجودی اضافه شد
   }));
 
   return (
@@ -55,7 +55,7 @@ export async function ProductShowcase() {
           </div>
         ) : (
           formattedProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <ProductCard key={product.id} product={product as any} />
           ))
         )}
       </div>

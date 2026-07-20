@@ -119,6 +119,9 @@ model Product {
   subtitle        String?     
   description     String      @db.Text      
   richDescription String?     @db.Text 
+
+  referenceUrl    String?
+  
   price           Int
   discountedPrice Int? 
   stock           Int
