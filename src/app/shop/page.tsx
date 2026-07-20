@@ -17,7 +17,6 @@ export default async function ShopPage({
   const q = typeof resolvedParams.q === 'string' ? resolvedParams.q : undefined;
   const categoryId = typeof resolvedParams.category === 'string' ? resolvedParams.category : undefined;
   const inStock = resolvedParams.inStock === 'true';
-  // دریافت پارامتر تخفیف از URL
   const isDiscounted = resolvedParams.discount === 'true';
   const tagQuery = resolvedParams.tag;
   const tags = Array.isArray(tagQuery) ? tagQuery : typeof tagQuery === 'string' ? [tagQuery] : [];
@@ -41,7 +40,6 @@ export default async function ShopPage({
   if (inStock) {
     whereClause.isAvailable = true;
   }
-  // اگر discount=true بود، فقط کالاهایی را بیاور که قیمت تخفیف‌خورده آن‌ها خالی (null) نیست
   if (isDiscounted) {
     whereClause.discountedPrice = { not: null };
   }
@@ -72,6 +70,7 @@ export default async function ShopPage({
     images: product.images,
     badge: product.tags?.[0]?.name || null,
     tags: product.tags.map(t => t.name),
+    isAvailable: product.isAvailable, // 👈 فیلد وضعیت موجودی اضافه شد
   }));
 
   return (
@@ -83,7 +82,6 @@ export default async function ShopPage({
             فروشگاه <span className="text-gold">تراست</span>
           </h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            {/* اگر در حالت تخفیف بودیم، پیام مناسب‌تری نمایش می‌دهیم */}
             {isDiscounted ? (
               <span className="text-gold font-medium">✨ مشاهده محصولات دارای تخفیف ویژه ✨</span>
             ) : (

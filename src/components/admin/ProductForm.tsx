@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Loader2, Video, Image as ImageIcon, UploadCloud } from "lucide-react";
+import { Plus, Trash2, Loader2, Video, Image as ImageIcon, UploadCloud, Link as LinkIcon } from "lucide-react";
 import { createProductAction, updateProductAction } from "@/actions/product";
 import { uploadFilesAction } from "@/actions/upload";
 
@@ -20,13 +20,11 @@ export default function ProductForm({ categories, tags, initialData }: ProductFo
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  // === استیت‌های مربوط به آپلود تصاویر ===
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>(
     initialData?.images?.length ? initialData.images : []
   );
 
-  // === استیت‌های مربوط به آپلود ویدیوها (جدید و به شکل آرایه) ===
   const [selectedVideos, setSelectedVideos] = useState<File[]>([]);
   const [existingVideos, setExistingVideos] = useState<string[]>(
     initialData?.videoUrls?.length ? initialData.videoUrls : []
@@ -39,15 +37,12 @@ export default function ProductForm({ categories, tags, initialData }: ProductFo
     initialData?.faqs?.length ? initialData.faqs : [{ question: "", answer: "" }]
   );
 
-  // --- توابع مدیریت تصاویر ---
   const removeSelectedImage = (index: number) => setSelectedImages(selectedImages.filter((_, i) => i !== index));
   const removeExistingImage = (index: number) => setExistingImages(existingImages.filter((_, i) => i !== index));
 
-  // --- توابع مدیریت ویدیوها ---
   const removeSelectedVideo = (index: number) => setSelectedVideos(selectedVideos.filter((_, i) => i !== index));
   const removeExistingVideo = (index: number) => setExistingVideos(existingVideos.filter((_, i) => i !== index));
 
-  // --- توابع ویژگی‌ها و سوالات متداول ---
   const addAttributeField = () => setAttributes([...attributes, { key: "", value: "" }]);
   const removeAttributeField = (index: number) => setAttributes(attributes.filter((_, i) => i !== index));
   const handleAttributeChange = (index: number, field: "key" | "value", val: string) => {
@@ -64,12 +59,19 @@ export default function ProductForm({ categories, tags, initialData }: ProductFo
     setFaqs(newFaqs);
   };
 
-  // === سابمیت فرم ===
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
     const formElement = e.currentTarget;
     const mainFormData = new FormData(formElement);
+
+    // 🌟 تغییری که اضافه شد: ثبت اجباری وضعیت چک‌باکس‌ها در فرم دیتا
+    const isAvailableInput = formElement.querySelector('input[name="isAvailable"]') as HTMLInputElement;
+    mainFormData.set("isAvailable", isAvailableInput?.checked ? "true" : "false");
+
+    const isFeaturedInput = formElement.querySelector('input[name="isFeatured"]') as HTMLInputElement;
+    mainFormData.set("isFeatured", isFeaturedInput?.checked ? "true" : "false");
+    // -------------------------------------------------------------
 
     if (existingImages.length === 0 && selectedImages.length === 0) {
       setError("لطفاً حداقل یک فایل تصویر برای محصول انتخاب کنید.");
@@ -81,7 +83,6 @@ export default function ProductForm({ categories, tags, initialData }: ProductFo
         let finalImageUrls = [...existingImages];
         let finalVideoUrls = [...existingVideos];
 
-        // ۱. آپلود گروهی عکس‌ها
         if (selectedImages.length > 0) {
           const imageUploadData = new FormData();
           selectedImages.forEach((file) => imageUploadData.append("files", file));
@@ -94,7 +95,6 @@ export default function ProductForm({ categories, tags, initialData }: ProductFo
           }
         }
 
-        // ۲. آپلود گروهی ویدیوها
         if (selectedVideos.length > 0) {
           const videoUploadData = new FormData();
           selectedVideos.forEach((file) => videoUploadData.append("files", file));
@@ -113,7 +113,6 @@ export default function ProductForm({ categories, tags, initialData }: ProductFo
         mainFormData.append("attributes", JSON.stringify(validAttributes));
         mainFormData.append("faqs", JSON.stringify(validFaqs));
 
-        // ۳. ارسال اطلاعات به اکشن با هر دو آرایه تصاویر و ویدیوها
         let result;
         if (initialData) {
           result = await updateProductAction(initialData.id, mainFormData, finalImageUrls, finalVideoUrls);
@@ -141,12 +140,30 @@ export default function ProductForm({ categories, tags, initialData }: ProductFo
         <div className="space-y-2"><label className="text-sm text-muted-foreground">عنوان کوتاه</label><input name="subtitle" defaultValue={initialData?.subtitle} className="w-full rounded-xl border border-border bg-secondary/40 px-4 py-2.5 focus:border-gold focus:outline-none" /></div>
         <div className="space-y-2"><label className="text-sm text-muted-foreground">قیمت (تومان) *</label><input name="price" type="number" required defaultValue={initialData?.price} dir="ltr" className="w-full rounded-xl border border-border bg-secondary/40 px-4 py-2.5 text-left focus:border-gold focus:outline-none" /></div>
         <div className="space-y-2"><label className="text-sm text-muted-foreground">قیمت با تخفیف</label><input name="discountedPrice" type="number" defaultValue={initialData?.discountedPrice} dir="ltr" className="w-full rounded-xl border border-border bg-secondary/40 px-4 py-2.5 text-left focus:border-gold focus:outline-none" /></div>
-        <div className="space-y-2 md:col-span-2">
+        
+        {/* فیلد دسته‌بندی */}
+        <div className="space-y-2">
           <label className="text-sm text-muted-foreground">دسته‌بندی *</label>
           <select name="categoryId" required defaultValue={initialData?.categoryId} className="w-full rounded-xl border border-border bg-secondary/40 px-4 py-2.5 focus:border-gold focus:outline-none appearance-none">
             <option value="">انتخاب دسته‌بندی...</option>
             {categories.map((cat) => (<option key={cat.id} value={cat.id}>{cat.name}</option>))}
           </select>
+        </div>
+
+        {/* فیلد لینک مرجع لیا تیم */}
+        <div className="space-y-2">
+          <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <LinkIcon className="size-4 text-gold" />
+            لینک سایت لیا تیم (جهت آپدیت قیمت)
+          </label>
+          <input 
+            name="referenceUrl" 
+            type="url" 
+            dir="ltr" 
+            placeholder="https://liateam.ir/products/..."
+            defaultValue={initialData?.referenceUrl} 
+            className="w-full rounded-xl border border-border bg-secondary/40 px-4 py-2.5 text-left focus:border-gold focus:outline-none" 
+          />
         </div>
       </div>
 
@@ -168,8 +185,6 @@ export default function ProductForm({ categories, tags, initialData }: ProductFo
       </div>
 
       <div className="space-y-6 rounded-2xl border border-border/60 bg-secondary/10 p-5">
-        
-        {/* -- بخش آپلود گروهی عکس -- */}
         <div>
           <label className="flex items-center gap-2 text-sm font-bold text-foreground mb-4">
             <ImageIcon className="size-4 text-gold" /> گالری تصاویر محصول *
@@ -200,7 +215,6 @@ export default function ProductForm({ categories, tags, initialData }: ProductFo
 
         <hr className="border-border/40" />
 
-        {/* -- بخش آپلود گروهی ویدیو -- */}
         <div>
           <label className="flex items-center gap-2 text-sm font-bold text-foreground mb-4">
             <Video className="size-4 text-gold" /> گالری ویدیوهای محصول (اختیاری)
@@ -229,7 +243,6 @@ export default function ProductForm({ categories, tags, initialData }: ProductFo
         </div>
       </div>
 
-      {/* بخش مشخصات فنی */}
       <div className="space-y-4 rounded-2xl border border-border/60 bg-secondary/10 p-5">
         <div className="flex items-center justify-between"><label className="text-sm font-bold text-foreground">جدول مشخصات فنی</label><button type="button" onClick={addAttributeField} className="flex items-center gap-1.5 text-xs text-gold hover:text-yellow-400 transition-colors"><Plus className="size-4" />افزودن ویژگی</button></div>
         <div className="space-y-3">
@@ -243,7 +256,6 @@ export default function ProductForm({ categories, tags, initialData }: ProductFo
         </div>
       </div>
 
-      {/* بخش سوالات متداول */}
       <div className="space-y-4 rounded-2xl border border-border/60 bg-secondary/10 p-5">
         <div className="flex items-center justify-between"><label className="text-sm font-bold text-foreground">سوالات متداول (FAQ)</label><button type="button" onClick={addFaqField} className="flex items-center gap-1.5 text-xs text-gold hover:text-yellow-400 transition-colors"><Plus className="size-4" />افزودن سوال</button></div>
         <div className="space-y-4">
@@ -257,7 +269,6 @@ export default function ProductForm({ categories, tags, initialData }: ProductFo
         </div>
       </div>
 
-      {/* بخش توضیحات متنی */}
       <div className="space-y-6">
           <div className="space-y-2">
             <label className="text-sm text-muted-foreground font-bold">توضیحات کوتاه (ویژگی‌های کلیدی) *</label>

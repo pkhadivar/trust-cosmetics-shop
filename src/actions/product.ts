@@ -16,6 +16,9 @@ export async function createProductAction(formData: FormData, imageUrls: string[
   const attributes = attributesRaw ? JSON.parse(attributesRaw) : [];
   const faqs = faqsRaw ? JSON.parse(faqsRaw) : [];
 
+  // دریافت لینک مرجع (در صورت خالی بودن null ثبت می‌شود)
+  const referenceUrl = (formData.get('referenceUrl') as string) || null;
+
   try {
     await prisma.product.create({
       data: {
@@ -29,10 +32,11 @@ export async function createProductAction(formData: FormData, imageUrls: string[
         categoryId: formData.get('categoryId') as string,
         description: formData.get('description') as string,
         richDescription: (formData.get('richDescription') as string) || null,
+        referenceUrl: referenceUrl, // 👈 اضافه شد
         stock: 0,
         
-        images: imageUrls,      // آرایه تصاویر
-        videoUrls: videoUrls,   // آرایه ویدیوها (جدید)
+        images: imageUrls,      
+        videoUrls: videoUrls,   
         
         tags: {
           connect: tagIds.map((id) => ({ id }))
@@ -54,8 +58,7 @@ export async function createProductAction(formData: FormData, imageUrls: string[
       }
     });
 
-    revalidatePath('/admin/products');
-    revalidatePath('/');
+    revalidatePath('/', 'layout');
     return { success: true };
   } catch (error) {
     console.error('خطا در ثبت محصول:', error);
@@ -73,6 +76,9 @@ export async function updateProductAction(id: string, formData: FormData, imageU
   const attributes = attributesRaw ? JSON.parse(attributesRaw) : [];
   const faqs = faqsRaw ? JSON.parse(faqsRaw) : [];
 
+  // دریافت لینک مرجع
+  const referenceUrl = (formData.get('referenceUrl') as string) || null;
+
   try {
     await prisma.product.update({
       where: { id },
@@ -86,9 +92,10 @@ export async function updateProductAction(id: string, formData: FormData, imageU
         categoryId: formData.get('categoryId') as string,
         description: formData.get('description') as string,
         richDescription: (formData.get('richDescription') as string) || null,
+        referenceUrl: referenceUrl, // 👈 اضافه شد
         
-        images: imageUrls,      // آپدیت آرایه تصاویر
-        videoUrls: videoUrls,   // آپدیت آرایه ویدیوها (جدید)
+        images: imageUrls,      
+        videoUrls: videoUrls,   
 
         tags: {
           set: tagIds.map((id) => ({ id }))
@@ -112,8 +119,7 @@ export async function updateProductAction(id: string, formData: FormData, imageU
       }
     });
 
-    revalidatePath('/admin/products');
-    revalidatePath('/'); 
+    revalidatePath('/', 'layout');
     return { success: true };
   } catch (error) {
     console.error('خطا در ویرایش محصول:', error);
