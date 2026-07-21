@@ -1,36 +1,59 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Trust Cosmetics Shop
 
-## Getting Started
+## Project Overview & Purpose
+Trust Cosmetics Shop is a full-featured e-commerce platform built with Next.js 13+ for selling cosmetic products. The application includes user authentication, product management, shopping cart functionality, order processing, and admin dashboard capabilities.
 
-First, run the development server:
+## Tech Stack
+| Technology | Version/Details |
+|------------|----------------|
+| Framework | Next.js (App Router) |
+| Language | TypeScript |
+| Database | PostgreSQL via Prisma ORM |
+| Authentication | NextAuth.js |
+| State Management | Redux Toolkit |
+| Styling | Tailwind CSS |
+| Testing | Jest |
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Annotated Folder Structure
+```text
+.
+├── src/                     # Source code root
+│   ├── app/                 # Next.js app router pages and routes
+│   ├── components/          # React components
+│   ├── lib/                 # Business logic and utilities
+│   ├── store/               # Redux store configuration
+│   ├── actions/             # Server actions for API interactions
+│   ├── utils/               # Utility functions
+│   ├── types/               # TypeScript type definitions
+│   └── middleware.ts        # Next.js middleware
+├── prisma/                  # Prisma database schema and client
+├── public/                  # Static assets
+├── package.json             # Dependencies and scripts
+└── next.config.mjs          # Next.js configuration
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Modules/Package Responsibilities
+Authentication: src/components/NextAuthProvider.tsx, src/lib/session.ts, src/middleware.ts
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Product Management: src/lib/products.ts, src/actions/product.ts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Shopping Cart: src/store/cartSlice.ts, src/components/add-to-cart-action.tsx
 
-## Learn More
+User Profile: src/app/profile/, src/actions/order.ts, src/actions/wishlist.ts
 
-To learn more about Next.js, take a look at the following resources:
+Admin Panel: src/app/admin/ with nested routes for categories, products, orders, reviews, settings
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Setup & Installation
+Install dependencies: npm install
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Set environment variables in .env.local
 
-## Deploy on Vercel
+Run database migration: npx prisma migrate dev
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Start development server: npm run dev
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+How to Run Locally
+Development: npm run dev
+
+Production build: npm run build
+
+Production start: npm run start
