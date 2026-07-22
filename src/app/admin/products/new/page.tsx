@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import ProductForm from '@/components/admin/ProductForm'; 
 import { prisma } from '@/lib/prisma';
+import { getBrands } from "@/actions/brand";
 
 export default async function NewProductPage() {
   // دریافت لیست دسته‌بندی‌ها از دیتابیس
@@ -15,6 +16,7 @@ export default async function NewProductPage() {
     select: { id: true, name: true },
     orderBy: { name: 'asc' }
   });
+  const brands = await getBrands();
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -27,7 +29,7 @@ export default async function NewProductPage() {
       </div>
 
       {/* پاس دادن هر دو پراپ categories و tags به فرم هوشمند */}
-      <ProductForm categories={categories} tags={tags} />
+      <ProductForm categories={categories} tags={tags} brands={brands}/>
     </div>
   );
 }

@@ -111,6 +111,20 @@ model Category {
   products  Product[]
 }
 
+// مدل جدید برای برندها
+model Brand {
+  id          String    @id @default(cuid())
+  name        String    // نام برند (مثل: تراست اسلیم)
+  slug        String    @unique // برای استفاده در URL (مثل: trust-slim)
+  logo        String?   // لوگوی برند (اختیاری)
+  description String?   // توضیحات برند (اختیاری)
+  
+  products    Product[] // ارتباط با محصولات
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
 model Product {
   id              String      @id @default(cuid())
   title           String
@@ -119,6 +133,9 @@ model Product {
   subtitle        String?     
   description     String      @db.Text      
   richDescription String?     @db.Text 
+
+  brandId     String?   // 👈 شناسه برند (اختیاری است چون ? دارد)
+  brand       Brand?    @relation(fields: [brandId], references: [id])
 
   referenceUrl    String?
   

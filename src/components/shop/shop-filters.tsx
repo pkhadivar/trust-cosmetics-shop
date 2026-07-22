@@ -6,18 +6,21 @@ import { useState, useEffect } from "react";
 
 type Category = { id: string; name: string };
 type Tag = { id: string; name: string };
+type Brand = { id: string; name: string }; // 👈 تایپ برند اضافه شد
 
 type ShopFiltersProps = {
   categories: Category[];
   tags: Tag[];
+  brands: Brand[]; // 👈 پراپ برندها اضافه شد
 };
 
-export function ShopFilters({ categories, tags }: ShopFiltersProps) {
+export function ShopFilters({ categories, tags, brands }: ShopFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const currentCategory = searchParams.get("category") || "";
+  const currentBrand = searchParams.get("brand") || ""; // 👈 دریافت وضعیت برند فعلی از URL
   const currentTags = searchParams.getAll("tag");
   const currentInStock = searchParams.get("inStock") === "true";
   
@@ -70,10 +73,10 @@ export function ShopFilters({ categories, tags }: ShopFiltersProps) {
           </button>
         </div>
 
-        <div className="space-y-8 text-sm"> {/* افزایش فاصله بین کل سکشن‌ها از 6 به 8 */}
+        <div className="space-y-8 text-sm">
           
           {/* ۱. جستجوی متنی */}
-          <div className="flex flex-col gap-3"> {/* استفاده از gap-3 برای فاصله عنوان و اینپوت */}
+          <div className="flex flex-col gap-3">
             <label className="font-semibold text-foreground text-base">جستجو</label>
             <div className="relative">
               <input
@@ -88,7 +91,7 @@ export function ShopFilters({ categories, tags }: ShopFiltersProps) {
           </div>
 
           {/* ۲. دسته‌بندی‌ها */}
-          <div className="flex flex-col gap-4"> {/* استفاده از gap-4 برای فضای تنفس بیشتر */}
+          <div className="flex flex-col gap-4">
             <label className="font-semibold text-foreground text-base">دسته‌بندی‌ها</label>
             <div className="flex flex-col gap-3.5 max-h-52 overflow-y-auto pl-2 custom-scrollbar">
               <label className="flex items-center gap-3 cursor-pointer group">
@@ -120,7 +123,42 @@ export function ShopFilters({ categories, tags }: ShopFiltersProps) {
             </div>
           </div>
 
-          {/* ۳. برچسب‌ها (انتخاب چندگانه) */}
+          {/* 🌟 بخش جدید: برندها */}
+          {brands && brands.length > 0 && (
+            <div className="flex flex-col gap-4">
+              <label className="font-semibold text-foreground text-base">برندها</label>
+              <div className="flex flex-col gap-3.5 max-h-52 overflow-y-auto pl-2 custom-scrollbar">
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <input
+                    type="radio"
+                    name="brand"
+                    checked={currentBrand === ""}
+                    onChange={() => router.push(`${pathname}?${createQueryString("brand", null)}`)}
+                    className="size-4.5 accent-gold shrink-0 cursor-pointer"
+                  />
+                  <span className="text-muted-foreground group-hover:text-foreground transition-colors text-sm">
+                    همه برندها
+                  </span>
+                </label>
+                {brands.map((brand) => (
+                  <label key={brand.id} className="flex items-center gap-3 cursor-pointer group">
+                    <input
+                      type="radio"
+                      name="brand"
+                      checked={currentBrand === brand.id}
+                      onChange={() => router.push(`${pathname}?${createQueryString("brand", brand.id)}`)}
+                      className="size-4.5 accent-gold shrink-0 cursor-pointer"
+                    />
+                    <span className="text-muted-foreground group-hover:text-foreground transition-colors text-sm">
+                      {brand.name}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ۴. برچسب‌ها (انتخاب چندگانه) */}
           {tags.length > 0 && (
             <div className="flex flex-col gap-4">
               <label className="font-semibold text-foreground text-base">برچسب‌های ویژه</label>
@@ -155,7 +193,7 @@ export function ShopFilters({ categories, tags }: ShopFiltersProps) {
             </div>
           )}
 
-          {/* ۴. موجودی */}
+          {/* ۵. موجودی */}
           <div className="pt-4 border-t border-border/50">
             <label className="flex items-center justify-between cursor-pointer group py-1">
               <span className="font-semibold text-foreground group-hover:text-gold transition-colors text-base">فقط کالاهای موجود</span>
