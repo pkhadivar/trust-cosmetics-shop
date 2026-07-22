@@ -12,6 +12,8 @@ const menuItems = [
   { title: "سفارشات", href: "/admin/orders" },
   { title: "نظرات", href: "/admin/reviews" }, // <--- اضافه شدن تب نظرات در اینجا
   { title: "تنطیمات", href: "/admin/settings" },
+  { title: "برند", href: "/admin/brands" },
+
 ];
 
 export function AdminNavLinks() {

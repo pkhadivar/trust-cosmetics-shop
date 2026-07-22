@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import ProductForm from '@/components/admin/ProductForm';
+import { getBrands } from "@/actions/brand";
 
 // توجه کنید که تایپِ params به Promise تغییر کرده است
 export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
@@ -21,13 +22,14 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
       faqs: true        // <--- واکشی جدول سوالات متداول اضافه شد
     }
   });
+  const brands = await getBrands();
 
   if (!product) return <div className="p-8 text-center text-foreground">محصول یافت نشد</div>;
 
   return (
     <div className="max-w-4xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6 text-foreground">ویرایش محصول: {product.title}</h1>
-      <ProductForm categories={categories} tags={tags} initialData={product} />
+      <ProductForm categories={categories} tags={tags} initialData={product} brands={brands} />
     </div>
   );
 }

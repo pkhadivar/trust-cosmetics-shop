@@ -16,6 +16,7 @@ export default async function ShopPage({
 
   const q = typeof resolvedParams.q === 'string' ? resolvedParams.q : undefined;
   const categoryId = typeof resolvedParams.category === 'string' ? resolvedParams.category : undefined;
+  const brandId = typeof resolvedParams.brand === 'string' ? resolvedParams.brand : undefined; // 👈 پارامتر برند اضافه شد
   const inStock = resolvedParams.inStock === 'true';
   const isDiscounted = resolvedParams.discount === 'true';
   const tagQuery = resolvedParams.tag;
@@ -34,6 +35,9 @@ export default async function ShopPage({
   if (categoryId) {
     whereClause.categoryId = categoryId;
   }
+  if (brandId) { // 👈 اعمال فیلتر برند در کوئری دیتابیس
+    whereClause.brandId = brandId;
+  }
   if (tags.length > 0) {
     whereClause.tags = { some: { name: { in: tags } } };
   }
@@ -51,9 +55,11 @@ export default async function ShopPage({
     orderByClause = { price: 'desc' };
   }
 
-  const [categories, allTags, products] = await Promise.all([
+  // 👈 دریافت برندها همزمان با بقیه اطلاعات
+  const [categories, allTags, brands, products] = await Promise.all([
     prisma.category.findMany({ orderBy: { name: 'asc' } }),
     prisma.tag.findMany({ orderBy: { name: 'asc' } }),
+    prisma.brand.findMany({ orderBy: { name: 'asc' } }), 
     prisma.product.findMany({
       where: whereClause,
       orderBy: orderByClause,
@@ -70,7 +76,7 @@ export default async function ShopPage({
     images: product.images,
     badge: product.tags?.[0]?.name || null,
     tags: product.tags.map(t => t.name),
-    isAvailable: product.isAvailable, // 👈 فیلد وضعیت موجودی اضافه شد
+    isAvailable: product.isAvailable,
   }));
 
   return (
@@ -93,7 +99,8 @@ export default async function ShopPage({
 
       <main className="flex-1 mx-auto max-w-7xl w-full px-5 py-8 md:py-12 flex flex-col lg:flex-row gap-8">
         
-        <ShopFilters categories={categories} tags={allTags} />
+        {/* 👈 برندها را به عنوان پراپ به کامپوننت فیلتر می‌فرستیم */}
+        <ShopFilters categories={categories} tags={allTags} brands={brands} />
 
         <div className="flex-1 flex flex-col gap-6">
           <div className="bg-card border border-border rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">

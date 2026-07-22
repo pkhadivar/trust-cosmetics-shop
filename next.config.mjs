@@ -8,11 +8,9 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'trust-shop-storage.storage.c2.liara.site',
-      },
-      {
-        protocol: 'https',
-        hostname: 'placehold.co',
+        hostname: 'media.trustbeautystore.ir',
+        port: '',
+        pathname: '/**',
       }
     ],
   },

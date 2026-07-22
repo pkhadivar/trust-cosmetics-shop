@@ -8,14 +8,16 @@ import { uploadFilesAction } from "@/actions/upload";
 
 type Category = { id: string; name: string; };
 type Tag = { id: string; name: string; };
+type Brand = { id: string; name: string; }; // 👈 تایپ برند اضافه شد
 
 type ProductFormProps = {
   categories: Category[];
   tags: Tag[];
+  brands: Brand[]; // 👈 پراپ برندها اضافه شد
   initialData?: any;
 };
 
-export default function ProductForm({ categories, tags, initialData }: ProductFormProps) {
+export default function ProductForm({ categories, tags, brands, initialData }: ProductFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -150,8 +152,19 @@ export default function ProductForm({ categories, tags, initialData }: ProductFo
           </select>
         </div>
 
-        {/* فیلد لینک مرجع لیا تیم */}
+        {/* 🌟 فیلد برند (جدید) */}
         <div className="space-y-2">
+          <label className="text-sm text-muted-foreground">برند (اختیاری)</label>
+          <select name="brandId" defaultValue={initialData?.brandId || ""} className="w-full rounded-xl border border-border bg-secondary/40 px-4 py-2.5 focus:border-gold focus:outline-none appearance-none">
+            <option value="">بدون برند</option>
+            {brands.map((brand) => (
+              <option key={brand.id} value={brand.id}>{brand.name}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* فیلد لینک مرجع لیا تیم */}
+        <div className="space-y-2 md:col-span-2">
           <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <LinkIcon className="size-4 text-gold" />
             لینک سایت لیا تیم (جهت آپدیت قیمت)
