@@ -28,11 +28,18 @@ export function OrderSearchFilter() {
   // تابع ساخت URL جدید
   const createQueryString = (name: string, value: string | null) => {
     const params = new URLSearchParams(searchParams.toString());
+    
     if (value === null || value === "ALL" || value === "") {
       params.delete(name);
     } else {
       params.set(name, value);
     }
+    
+    // 🌟 تغییر جدید: با هر بار جستجو یا تغییر فیلتر، صفحه را به 1 برگردان
+    if (name === "q" || name === "status") {
+      params.set("page", "1");
+    }
+    
     return params.toString();
   };
 

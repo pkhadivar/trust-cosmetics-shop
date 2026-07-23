@@ -1,28 +1,34 @@
 import { prisma } from "@/lib/prisma";
 import { OrderActionsClient } from "./OrderActionsClient";
-import { OrderSearchFilter } from "./OrderSearchFilter"; // 👈 کامپوننت فیلتر اضافه شد
+import { OrderSearchFilter } from "./OrderSearchFilter";
+import { OrderPagination } from "./OrderPagination"; // 👈 کامپوننت صفحه‌بندی اضافه شد
 import { OrderStatus } from "@prisma/client";
+
+const ITEMS_PER_PAGE = 10; // 🌟 تعداد سفارش در هر صفحه (می‌توانید تغییر دهید)
 
 export default async function AdminOrdersPage({ 
   searchParams 
 }: { 
   searchParams: Promise<{ [key: string]: string | string[] | undefined }> 
 }) {
-  // ۱. استخراج پارامترهای URL
   const resolvedParams = await searchParams;
   const q = typeof resolvedParams.q === 'string' ? resolvedParams.q : undefined;
   const statusParam = typeof resolvedParams.status === 'string' ? resolvedParams.status : undefined;
+  
+  // 🌟 استخراج شماره صفحه از URL (پیش‌فرض صفحه 1)
+// دریافت شماره صفحه و تبدیل آن به عدد
+const parsedPage = typeof resolvedParams.page === 'string' ? Number(resolvedParams.page) : 1;
 
-  // ۲. ساخت شرط دیتابیس به صورت داینامیک
+// جلوگیری از باگ: اگر عدد نامعتبر، صفر یا منفی بود، همیشه صفحه 1 را در نظر بگیر
+const currentPage = (isNaN(parsedPage) || parsedPage < 1) ? 1 : parsedPage;
+
+  // ساخت شرط دیتابیس
   const whereClause: any = {};
 
   if (q) {
     whereClause.OR = [
-      // جستجو در شناسه سفارش (شماره پیگیری)
       { id: { contains: q, mode: 'insensitive' } },
-      // جستجو در نام مشتری
       { customerName: { contains: q, mode: 'insensitive' } },
-      // جستجو در شماره تماس مشتری
       { customerPhone: { contains: q, mode: 'insensitive' } },
     ];
   }
@@ -31,29 +37,36 @@ export default async function AdminOrdersPage({
     whereClause.status = statusParam as OrderStatus;
   }
 
-  // ۳. واکشی اطلاعات با اعمال فیلترها
-  const orders = await prisma.order.findMany({
-    where: whereClause,
-    include: {
-      user: true, 
-      items: {
-        include: {
-          product: true 
+  // 🌟 واکشی همزمانِ لیست سفارشات و تعداد کل سفارشات (برای سرعت بالا)
+  const [totalOrdersCount, orders] = await Promise.all([
+    prisma.order.count({ where: whereClause }),
+    prisma.order.findMany({
+      where: whereClause,
+      take: ITEMS_PER_PAGE, // فقط 10 تا بگیر
+      skip: (currentPage - 1) * ITEMS_PER_PAGE, // رد کردن صفحات قبلی
+      include: {
+        user: true, 
+        items: {
+          include: {
+            product: true 
+          }
         }
-      }
-    },
-    orderBy: { createdAt: 'desc' }
-  });
+      },
+      orderBy: { createdAt: 'desc' }
+    })
+  ]);
+
+  // محاسبه تعداد کل صفحات
+  const totalPages = Math.ceil(totalOrdersCount / ITEMS_PER_PAGE);
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <h1 className="text-3xl font-bold text-foreground mb-8">مدیریت سفارشات</h1>
 
-      {/* 🌟 نوار جستجو و فیلتر */}
       <OrderSearchFilter />
 
-      <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-2xl">
-        <div className="overflow-x-auto custom-scrollbar">
+      <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-2xl flex flex-col">
+        <div className="overflow-x-auto custom-scrollbar flex-1">
           <table className="w-full text-right text-sm">
             <thead className="bg-secondary/40 text-muted-foreground border-b border-border">
               <tr>
@@ -67,6 +80,7 @@ export default async function AdminOrdersPage({
             </thead>
             <tbody className="divide-y divide-border/50">
               {orders.map((order) => (
+
                 <tr key={order.id} className="hover:bg-secondary/10 transition-colors">
                   <td className="p-5 font-mono font-medium text-foreground">
                     {order.id.slice(-8).toUpperCase()}
@@ -94,6 +108,8 @@ export default async function AdminOrdersPage({
                     <OrderActionsClient order={order} />
                   </td>
                 </tr>
+
+                
               ))}
               
               {orders.length === 0 && (
@@ -106,6 +122,10 @@ export default async function AdminOrdersPage({
             </tbody>
           </table>
         </div>
+
+        {/* 🌟 نمایش دکمه‌های صفحه‌بندی در پایین جدول */}
+        <OrderPagination totalPages={totalPages} currentPage={currentPage} />
+        
       </div>
     </div>
   );
