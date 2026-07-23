@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { OrderActionsClient } from "./OrderActionsClient";
 import { OrderSearchFilter } from "./OrderSearchFilter";
-import { OrderPagination } from "./OrderPagination"; // 👈 کامپوننت صفحه‌بندی اضافه شد
+import { Pagination } from "@/components/shared/Pagination";
 import { OrderStatus } from "@prisma/client";
 
 const ITEMS_PER_PAGE = 10; // 🌟 تعداد سفارش در هر صفحه (می‌توانید تغییر دهید)
@@ -124,7 +124,7 @@ const currentPage = (isNaN(parsedPage) || parsedPage < 1) ? 1 : parsedPage;
         </div>
 
         {/* 🌟 نمایش دکمه‌های صفحه‌بندی در پایین جدول */}
-        <OrderPagination totalPages={totalPages} currentPage={currentPage} />
+        <Pagination totalPages={totalPages} currentPage={currentPage} />
         
       </div>
     </div>
