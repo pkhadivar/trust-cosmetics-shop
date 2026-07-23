@@ -127,7 +127,7 @@ function PaymentResultUI({ success, message, refId }: { success: boolean; messag
         <div className="flex flex-col gap-3">
           {success ? (
             <Link 
-              href="/profile/orders" 
+              href="/profile?tab=orders" 
               className="w-full bg-gold hover:bg-yellow-500 text-[#0a0f1c] font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
             >
               <ShoppingBag className="size-5" />

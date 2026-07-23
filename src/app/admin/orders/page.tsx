@@ -1,11 +1,46 @@
 import { prisma } from "@/lib/prisma";
-import { OrderStatusClient } from "./OrderStatusClient"; // کامپوننتی که در ادامه همین فایل می‌نویسیم
+import { OrderActionsClient } from "./OrderActionsClient";
+import { OrderSearchFilter } from "./OrderSearchFilter"; // 👈 کامپوننت فیلتر اضافه شد
+import { OrderStatus } from "@prisma/client";
 
-export default async function AdminOrdersPage() {
+export default async function AdminOrdersPage({ 
+  searchParams 
+}: { 
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }> 
+}) {
+  // ۱. استخراج پارامترهای URL
+  const resolvedParams = await searchParams;
+  const q = typeof resolvedParams.q === 'string' ? resolvedParams.q : undefined;
+  const statusParam = typeof resolvedParams.status === 'string' ? resolvedParams.status : undefined;
+
+  // ۲. ساخت شرط دیتابیس به صورت داینامیک
+  const whereClause: any = {};
+
+  if (q) {
+    whereClause.OR = [
+      // جستجو در شناسه سفارش (شماره پیگیری)
+      { id: { contains: q, mode: 'insensitive' } },
+      // جستجو در نام مشتری
+      { customerName: { contains: q, mode: 'insensitive' } },
+      // جستجو در شماره تماس مشتری
+      { customerPhone: { contains: q, mode: 'insensitive' } },
+    ];
+  }
+
+  if (statusParam && statusParam !== 'ALL') {
+    whereClause.status = statusParam as OrderStatus;
+  }
+
+  // ۳. واکشی اطلاعات با اعمال فیلترها
   const orders = await prisma.order.findMany({
+    where: whereClause,
     include: {
-      user: true, // دریافت اطلاعات کاربری که سفارش داده
-      items: true
+      user: true, 
+      items: {
+        include: {
+          product: true 
+        }
+      }
     },
     orderBy: { createdAt: 'desc' }
   });
@@ -13,6 +48,9 @@ export default async function AdminOrdersPage() {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <h1 className="text-3xl font-bold text-foreground mb-8">مدیریت سفارشات</h1>
+
+      {/* 🌟 نوار جستجو و فیلتر */}
+      <OrderSearchFilter />
 
       <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-2xl">
         <div className="overflow-x-auto custom-scrollbar">
@@ -53,8 +91,7 @@ export default async function AdminOrdersPage() {
                     )}
                   </td>
                   <td className="p-5 text-center">
-                    {/* فراخوانی کامپوننت تغییر وضعیت */}
-                    <OrderStatusClient orderId={order.id} currentStatus={order.status} />
+                    <OrderActionsClient order={order} />
                   </td>
                 </tr>
               ))}
@@ -62,7 +99,7 @@ export default async function AdminOrdersPage() {
               {orders.length === 0 && (
                 <tr>
                   <td colSpan={6} className="p-10 text-center text-muted-foreground">
-                    هیچ سفارشی در سیستم ثبت نشده است.
+                    با این فیلترها سفارشی یافت نشد.
                   </td>
                 </tr>
               )}
