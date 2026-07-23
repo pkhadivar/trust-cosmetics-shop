@@ -1,8 +1,8 @@
 "use client";
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
-import { Search, Filter, X } from "lucide-react";
+import { Filter, X } from "lucide-react";
+import { SearchInput } from "@/components/shared/SearchInput"; // 🌟 کامپوننت عمومی جستجو
 
 const statusOptions = [
   { value: "ALL", label: "همه وضعیت‌ها" },
@@ -19,71 +19,39 @@ export function OrderSearchFilter() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // خواندن مقادیر فعلی از URL
   const currentStatus = searchParams.get("status") || "ALL";
-  const currentQ = searchParams.get("q") || "";
+  
+  // بررسی اینکه آیا اصلاً فیلتری فعال هست یا خیر (برای دکمه پاک کردن)
+  const hasActiveFilters = searchParams.get("q") || currentStatus !== "ALL";
 
-  const [searchQuery, setSearchQuery] = useState(currentQ);
-
-  // تابع ساخت URL جدید
-  const createQueryString = (name: string, value: string | null) => {
-    const params = new URLSearchParams(searchParams.toString());
-    
-    if (value === null || value === "ALL" || value === "") {
-      params.delete(name);
-    } else {
-      params.set(name, value);
-    }
-    
-    // 🌟 تغییر جدید: با هر بار جستجو یا تغییر فیلتر، صفحه را به 1 برگردان
-    if (name === "q" || name === "status") {
-      params.set("page", "1");
-    }
-    
-    return params.toString();
-  };
-
-  // اعمال جستجوی متنی با نیم ثانیه تاخیر (برای جلوگیری از ریکوئست‌های اضافی به سرور)
-  useEffect(() => {
-    const delayDebounceFn = setTimeout(() => {
-      if (searchQuery !== currentQ) {
-        router.push(`${pathname}?${createQueryString("q", searchQuery || null)}`);
-      }
-    }, 500);
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery, pathname, router, currentQ]);
-
-  // اعمال فیلتر وضعیت
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    router.push(`${pathname}?${createQueryString("status", e.target.value)}`);
+    const params = new URLSearchParams(searchParams.toString());
+    const value = e.target.value;
+    
+    if (value === "ALL") {
+      params.delete("status");
+    } else {
+      params.set("status", value);
+    }
+    
+    // با تغییر وضعیت، برگرد به صفحه اول
+    params.set("page", "1");
+    router.push(`${pathname}?${params.toString()}`);
   };
 
-  // پاک کردن فیلترها
   const handleClearFilters = () => {
-    setSearchQuery("");
     router.push(pathname);
   };
-
-  const hasActiveFilters = currentStatus !== "ALL" || currentQ !== "";
 
   return (
     <div className="bg-card border border-border rounded-2xl p-4 mb-6 flex flex-col sm:flex-row items-center gap-4 shadow-sm">
       
-      {/* فیلد جستجو */}
-      <div className="relative w-full sm:flex-1">
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="جستجو با نام، شماره تماس یا شماره سفارش..."
-          className="w-full bg-secondary/50 border border-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-foreground focus:border-gold focus:outline-none transition-colors"
-        />
-        <Search className="size-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-      </div>
+      {/* 🌟 استفاده از کامپوننت عمومی جستجو */}
+      <SearchInput placeholder="جستجو با نام، شماره تماس یا شماره سفارش..." />
 
-      {/* فیلتر وضعیت */}
+      {/* فیلتر اختصاصی وضعیت سفارش */}
       <div className="relative w-full sm:w-auto min-w-[200px] flex items-center gap-2">
-        <Filter className="size-4 text-muted-foreground absolute right-3" />
+        <Filter className="size-4 text-muted-foreground absolute right-3 pointer-events-none" />
         <select
           value={currentStatus}
           onChange={handleStatusChange}
