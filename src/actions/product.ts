@@ -18,6 +18,7 @@ export async function createProductAction(formData: FormData, imageUrls: string[
 
   // دریافت لینک مرجع (در صورت خالی بودن null ثبت می‌شود)
   const referenceUrl = (formData.get('referenceUrl') as string) || null;
+  const isAvailable = formData.get('isAvailable') === 'true';
 
   try {
     await prisma.product.create({
@@ -27,13 +28,13 @@ export async function createProductAction(formData: FormData, imageUrls: string[
         subtitle: (formData.get('subtitle') as string) || null,
         price: parseInt(formData.get('price') as string),
         discountedPrice: formData.get('discountedPrice') ? parseInt(formData.get('discountedPrice') as string) : null,
-        isAvailable: formData.get('isAvailable') === 'true',
+        isAvailable: isAvailable,
         isFeatured: formData.get('isFeatured') === 'true',
         categoryId: formData.get('categoryId') as string,
         description: formData.get('description') as string,
         richDescription: (formData.get('richDescription') as string) || null,
         referenceUrl: referenceUrl, // 👈 اضافه شد
-        stock: 0,
+        stock: isAvailable ? 9999 : 0,
         
         images: imageUrls,      
         videoUrls: videoUrls,   
@@ -78,6 +79,7 @@ export async function updateProductAction(id: string, formData: FormData, imageU
 
   // دریافت لینک مرجع
   const referenceUrl = (formData.get('referenceUrl') as string) || null;
+  const isAvailable = formData.get('isAvailable') === 'true';
 
   try {
     await prisma.product.update({
@@ -87,12 +89,13 @@ export async function updateProductAction(id: string, formData: FormData, imageU
         subtitle: (formData.get('subtitle') as string) || null,
         price: parseInt(formData.get('price') as string),
         discountedPrice: formData.get('discountedPrice') ? parseInt(formData.get('discountedPrice') as string) : null,
-        isAvailable: formData.get('isAvailable') === 'true',
+        isAvailable: isAvailable,
         isFeatured: formData.get('isFeatured') === 'true',
         categoryId: formData.get('categoryId') as string,
         description: formData.get('description') as string,
         richDescription: (formData.get('richDescription') as string) || null,
         referenceUrl: referenceUrl, // 👈 اضافه شد
+        stock: isAvailable ? 9999 : 0,
         
         images: imageUrls,      
         videoUrls: videoUrls,   

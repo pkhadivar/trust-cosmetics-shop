@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useMemo, Suspense } from "react";
+// 🌟 اضافه شدن useSearchParams و usePathname
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Image from "next/image";
 import { User, MapPin, ShoppingBag, Shield, Phone, CheckCircle2, AlertCircle, Edit2, Trash2, X, Package, Clock, Truck, Heart } from "lucide-react";
 import Link from "next/link";
@@ -87,9 +88,27 @@ interface ProfileTabsProps {
   };
 }
 
+// 🌟 برای جلوگیری از ارور Suspense در Next.js هنگام استفاده از useSearchParams
 export function ProfileTabs({ user }: ProfileTabsProps) {
+  return (
+    <Suspense fallback={<div className="animate-pulse h-96 bg-secondary/20 rounded-3xl w-full" />}>
+      <ProfileTabsContent user={user} />
+    </Suspense>
+  )
+}
+
+function ProfileTabsContent({ user }: ProfileTabsProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"info" | "addresses" | "orders" | "wishlist">("info");
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+
+  // 🌟 خواندن تب پیش‌فرض از URL
+  const tabParam = searchParams.get("tab") as "info" | "addresses" | "orders" | "wishlist" | null;
+  const validTabs = ["info", "addresses", "orders", "wishlist"];
+  
+  const [activeTab, setActiveTab] = useState<"info" | "addresses" | "orders" | "wishlist">(
+    tabParam && validTabs.includes(tabParam) ? tabParam : "info"
+  );
   
   // ۱. استیت‌های اطلاعات حساب
   const [nameInput, setNameInput] = useState(user.name === "کاربر عزیز" ? "" : user.name || "");
@@ -140,6 +159,14 @@ export function ProfileTabs({ user }: ProfileTabsProps) {
   // ۴. استیت‌های علاقه‌مندی‌ها
   const [wishlist, setWishlist] = useState<any[]>([]);
   const [isLoadingWishlist, setIsLoadingWishlist] = useState(false);
+
+  // 🌟 همگام‌سازی استیت با URL در صورت استفاده کاربر از دکمه Back مرورگر
+  useEffect(() => {
+    const currentTab = searchParams.get("tab") as any;
+    if (currentTab && validTabs.includes(currentTab)) {
+      setActiveTab(currentTab);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (activeTab === "addresses") fetchAddresses();
@@ -245,6 +272,16 @@ export function ProfileTabs({ user }: ProfileTabsProps) {
     setSelectedProvinceId("");
   };
 
+  // 🌟 تابع تغییر تب و آپدیت همزمان URL
+  const handleTabChange = (tabId: "info" | "addresses" | "orders" | "wishlist") => {
+    setActiveTab(tabId);
+    if (tabId !== "addresses") {
+      cancelEditing();
+    }
+    // آپدیت کردن آدرس مرورگر بدون رفرش شدن صفحه
+    router.replace(`${pathname}?tab=${tabId}`, { scroll: false });
+  };
+
   return (
     <div className="w-full max-w-5xl mx-auto flex flex-col md:flex-row gap-8">
       
@@ -267,19 +304,19 @@ export function ProfileTabs({ user }: ProfileTabsProps) {
         </div>
 
         <nav className="flex flex-col gap-2">
-          <button onClick={() => { setActiveTab("info"); cancelEditing(); }} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium ${activeTab === "info" ? "bg-gold text-primary-foreground shadow-md" : "text-foreground/80 hover:bg-secondary"}`}>
+          <button onClick={() => handleTabChange("info")} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium ${activeTab === "info" ? "bg-gold text-primary-foreground shadow-md" : "text-foreground/80 hover:bg-secondary"}`}>
             <User className="size-4" /> اطلاعات حساب
           </button>
           
-          <button onClick={() => setActiveTab("addresses")} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium ${activeTab === "addresses" ? "bg-gold text-primary-foreground shadow-md" : "text-foreground/80 hover:bg-secondary"}`}>
+          <button onClick={() => handleTabChange("addresses")} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium ${activeTab === "addresses" ? "bg-gold text-primary-foreground shadow-md" : "text-foreground/80 hover:bg-secondary"}`}>
             <MapPin className="size-4" /> آدرس‌های من
           </button>
 
-          <button onClick={() => { setActiveTab("orders"); cancelEditing(); }} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium ${activeTab === "orders" ? "bg-gold text-primary-foreground shadow-md" : "text-foreground/80 hover:bg-secondary"}`}>
+          <button onClick={() => handleTabChange("orders")} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium ${activeTab === "orders" ? "bg-gold text-primary-foreground shadow-md" : "text-foreground/80 hover:bg-secondary"}`}>
             <ShoppingBag className="size-4" /> سفارشات من
           </button>
           
-          <button onClick={() => { setActiveTab("wishlist"); cancelEditing(); }} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium ${activeTab === "wishlist" ? "bg-gold text-primary-foreground shadow-md" : "text-foreground/80 hover:bg-secondary"}`}>
+          <button onClick={() => handleTabChange("wishlist")} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium ${activeTab === "wishlist" ? "bg-gold text-primary-foreground shadow-md" : "text-foreground/80 hover:bg-secondary"}`}>
             <Heart className="size-4" /> علاقه‌مندی‌ها
           </button>
 
@@ -483,24 +520,36 @@ export function ProfileTabs({ user }: ProfileTabsProps) {
                         </div>
                       </div>
 
-                      <div className="flex flex-wrap gap-4">
-                        {order.items.map((item: any) => (
-                          <div key={item.id} className="flex items-center gap-4 bg-secondary/20 rounded-xl p-3 border border-border/40 pr-4 w-full sm:w-auto">
-                            <div className="relative size-14 rounded-lg overflow-hidden bg-[#050810] border border-border shrink-0">
-                              <Image 
-                                src={item.product.images[0] || "/placeholder.jpg"} 
-                                alt={item.product.title} 
-                                fill 
-                                className="object-contain p-1"
-                              />
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-sm font-bold text-foreground line-clamp-1">{item.product.title}</span>
-                              <span className="text-xs text-muted-foreground mt-1">{item.price.toLocaleString('fa-IR')} تومان × {item.quantity} عدد</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                 <div className="flex flex-col gap-3 mt-4">
+                   {order.items.map((item: any) => (
+                     <div key={item.id} className="flex items-center justify-between bg-secondary/10 hover:bg-secondary/20 rounded-xl p-3 border border-border/40 w-full transition-colors">
+      
+                       {/* بخش عکس و نام محصول */}
+      <                 div className="flex items-center gap-4">
+                         <div className="relative size-14 rounded-lg overflow-hidden bg-[#050810] border border-border shrink-0">
+                           <Image 
+                             src={item.product.images[0] || "/placeholder.jpg"} 
+                             alt={item.product.title} 
+                             fill 
+                             className="object-contain p-1"
+                           />
+                         </div>
+                         <div className="flex flex-col text-right">
+                           <span className="text-sm font-bold text-foreground line-clamp-1">{item.product.title}</span>
+                           <span className="text-xs text-muted-foreground mt-1">
+            {                 item.price.toLocaleString('fa-IR')} تومان <span className="mx-1 text-gold">×</span> {item.quantity} عدد
+                           </span>
+                         </div>
+                       </div>
+
+                       {/* جمع مبلغ این سطر (اختیاری برای زیبایی بیشتر - فقط در دسکتاپ نمایش داده می‌شود) */}
+                       <div className="hidden sm:block text-sm font-bold text-gold shrink-0 pl-2">
+                         {(item.price * item.quantity).toLocaleString('fa-IR')} تومان
+                       </div>
+      
+                     </div>
+                   ))}
+                 </div>
                       
                       {order.refId && (
                         <div className="mt-5 pt-5 border-t border-border/50 flex items-center gap-2 text-sm text-muted-foreground bg-secondary/10 p-4 rounded-xl">

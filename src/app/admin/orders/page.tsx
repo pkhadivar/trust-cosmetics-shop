@@ -1,21 +1,72 @@
 import { prisma } from "@/lib/prisma";
-import { OrderStatusClient } from "./OrderStatusClient"; // کامپوننتی که در ادامه همین فایل می‌نویسیم
+import { OrderActionsClient } from "./OrderActionsClient";
+import { OrderSearchFilter } from "./OrderSearchFilter";
+import { OrderPagination } from "./OrderPagination"; // 👈 کامپوننت صفحه‌بندی اضافه شد
+import { OrderStatus } from "@prisma/client";
 
-export default async function AdminOrdersPage() {
-  const orders = await prisma.order.findMany({
-    include: {
-      user: true, // دریافت اطلاعات کاربری که سفارش داده
-      items: true
-    },
-    orderBy: { createdAt: 'desc' }
-  });
+const ITEMS_PER_PAGE = 10; // 🌟 تعداد سفارش در هر صفحه (می‌توانید تغییر دهید)
+
+export default async function AdminOrdersPage({ 
+  searchParams 
+}: { 
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }> 
+}) {
+  const resolvedParams = await searchParams;
+  const q = typeof resolvedParams.q === 'string' ? resolvedParams.q : undefined;
+  const statusParam = typeof resolvedParams.status === 'string' ? resolvedParams.status : undefined;
+  
+  // 🌟 استخراج شماره صفحه از URL (پیش‌فرض صفحه 1)
+// دریافت شماره صفحه و تبدیل آن به عدد
+const parsedPage = typeof resolvedParams.page === 'string' ? Number(resolvedParams.page) : 1;
+
+// جلوگیری از باگ: اگر عدد نامعتبر، صفر یا منفی بود، همیشه صفحه 1 را در نظر بگیر
+const currentPage = (isNaN(parsedPage) || parsedPage < 1) ? 1 : parsedPage;
+
+  // ساخت شرط دیتابیس
+  const whereClause: any = {};
+
+  if (q) {
+    whereClause.OR = [
+      { id: { contains: q, mode: 'insensitive' } },
+      { customerName: { contains: q, mode: 'insensitive' } },
+      { customerPhone: { contains: q, mode: 'insensitive' } },
+    ];
+  }
+
+  if (statusParam && statusParam !== 'ALL') {
+    whereClause.status = statusParam as OrderStatus;
+  }
+
+  // 🌟 واکشی همزمانِ لیست سفارشات و تعداد کل سفارشات (برای سرعت بالا)
+  const [totalOrdersCount, orders] = await Promise.all([
+    prisma.order.count({ where: whereClause }),
+    prisma.order.findMany({
+      where: whereClause,
+      take: ITEMS_PER_PAGE, // فقط 10 تا بگیر
+      skip: (currentPage - 1) * ITEMS_PER_PAGE, // رد کردن صفحات قبلی
+      include: {
+        user: true, 
+        items: {
+          include: {
+            product: true 
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    })
+  ]);
+
+  // محاسبه تعداد کل صفحات
+  const totalPages = Math.ceil(totalOrdersCount / ITEMS_PER_PAGE);
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <h1 className="text-3xl font-bold text-foreground mb-8">مدیریت سفارشات</h1>
 
-      <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-2xl">
-        <div className="overflow-x-auto custom-scrollbar">
+      <OrderSearchFilter />
+
+      <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-2xl flex flex-col">
+        <div className="overflow-x-auto custom-scrollbar flex-1">
           <table className="w-full text-right text-sm">
             <thead className="bg-secondary/40 text-muted-foreground border-b border-border">
               <tr>
@@ -29,6 +80,7 @@ export default async function AdminOrdersPage() {
             </thead>
             <tbody className="divide-y divide-border/50">
               {orders.map((order) => (
+
                 <tr key={order.id} className="hover:bg-secondary/10 transition-colors">
                   <td className="p-5 font-mono font-medium text-foreground">
                     {order.id.slice(-8).toUpperCase()}
@@ -53,22 +105,27 @@ export default async function AdminOrdersPage() {
                     )}
                   </td>
                   <td className="p-5 text-center">
-                    {/* فراخوانی کامپوننت تغییر وضعیت */}
-                    <OrderStatusClient orderId={order.id} currentStatus={order.status} />
+                    <OrderActionsClient order={order} />
                   </td>
                 </tr>
+
+                
               ))}
               
               {orders.length === 0 && (
                 <tr>
                   <td colSpan={6} className="p-10 text-center text-muted-foreground">
-                    هیچ سفارشی در سیستم ثبت نشده است.
+                    با این فیلترها سفارشی یافت نشد.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
+
+        {/* 🌟 نمایش دکمه‌های صفحه‌بندی در پایین جدول */}
+        <OrderPagination totalPages={totalPages} currentPage={currentPage} />
+        
       </div>
     </div>
   );

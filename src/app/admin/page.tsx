@@ -5,9 +5,10 @@ export default async function AdminDashboardPage() {
   // ۱. کل محصولات (تمام محصولاتی که در دیتابیس ثبت شده‌اند)
   const totalProducts = await prisma.product.count();
 
-  // ۲. سفارشات جدید (سفارشاتی که وضعیت آن‌ها PENDING یا "در انتظار" است)
-  const newOrdersCount = await prisma.order.count({
-    where: { status: 'PENDING' }
+  // ۲. 🌟 سفارشات نیازمند بررسی (تغییر از PENDING به PAID)
+  // این آمار به ادمین نشان می‌دهد چند سفارش پرداخت شده و منتظر خرید از سایت مرجع هستند
+  const actionRequiredOrdersCount = await prisma.order.count({
+    where: { status: 'PAID' }
   });
 
   // ۳. محاسبه درآمد ماه جاری (فقط سفارشات پرداخت شده یا ارسال شده در این ماه)
@@ -59,18 +60,26 @@ export default async function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* کارت 2: سفارشات جدید */}
-        <div className="flex flex-col justify-between rounded-2xl border border-border bg-card/50 p-6 shadow-sm">
+        {/* کارت 2: سفارشات نیازمند بررسی 🌟 */}
+        <div className="flex flex-col justify-between rounded-2xl border border-gold/30 bg-gold/5 p-6 shadow-sm relative overflow-hidden">
+          {/* یک نوار طلایی کوچک برای جلب توجه ادمین */}
+          <div className="absolute top-0 right-0 w-1 h-full bg-gold"></div>
+          
           <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-medium text-muted-foreground">سفارشات جدید (در انتظار)</span>
-            <div className="p-2 bg-secondary/50 rounded-lg">
+            <span className="text-sm font-bold text-foreground">نیازمند بررسی (پرداخت شده)</span>
+            <div className="p-2 bg-gold/20 rounded-lg">
               <ShoppingBag className="size-5 text-gold" />
             </div>
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-bold text-gold">
-              {newOrdersCount.toLocaleString("fa-IR")}
+              {actionRequiredOrdersCount.toLocaleString("fa-IR")}
             </span>
+            {actionRequiredOrdersCount > 0 && (
+              <span className="text-xs text-red-400 font-medium animate-pulse">
+                نیاز به اقدام!
+              </span>
+            )}
           </div>
         </div>
 
@@ -90,7 +99,7 @@ export default async function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* کارت 4: کل مشتریان (گزارش جدید) */}
+        {/* کارت 4: کل مشتریان */}
         <div className="flex flex-col justify-between rounded-2xl border border-border bg-card/50 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <span className="text-sm font-medium text-muted-foreground">کل مشتریان ثبت‌نامی</span>

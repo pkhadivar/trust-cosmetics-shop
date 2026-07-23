@@ -1,3 +1,4 @@
+// src/actions/payment.ts (یا فایلی که اکشن پرداخت در آن قرار دارد)
 "use server";
 
 import { prisma } from "@/lib/prisma";
@@ -29,8 +30,9 @@ export async function createOrderAndPay(data: CheckoutData) {
     for (const item of cartItems) {
       const product = await prisma.product.findUnique({ where: { id: item.productId } });
       
-      if (!product || !product.isAvailable || product.stock < item.quantity) {
-         return { success: false, error: `محصول ${product?.title || 'انتخابی'} موجود نیست یا تعداد درخواستی بیش از موجودی انبار است.` };
+      // 🌟 تغییر یافته: فقط بررسی می‌کنیم که محصول وجود داشته باشد و تیک موجودی فعال باشد
+      if (!product || !product.isAvailable) {
+         return { success: false, error: `محصول ${product?.title || 'انتخابی'} در حال حاضر موجود نمی‌باشد.` };
       }
 
       const finalPrice = product.discountedPrice ?? product.price;
