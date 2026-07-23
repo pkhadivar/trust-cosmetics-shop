@@ -13,6 +13,8 @@ const menuItems = [
   { title: "نظرات", href: "/admin/reviews" }, // <--- اضافه شدن تب نظرات در اینجا
   { title: "تنطیمات", href: "/admin/settings" },
   { title: "برند", href: "/admin/brands" },
+  { title: "کاربران", href: "/admin/users" },
+
 
 ];
 
