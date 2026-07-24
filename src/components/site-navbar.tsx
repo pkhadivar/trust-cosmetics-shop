@@ -14,6 +14,7 @@ const navItems = [
   { label: "محصولات", href: "/shop" },
   { label: "درباره ما", href: "/about" },
   { label: "تماس با ما", href: "/contact" },
+  { label: "سوالات متداول", href: "/faq" },
 ];
 
 export function SiteNavbar() {
