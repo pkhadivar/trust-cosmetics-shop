@@ -16,11 +16,21 @@ export async function createProductAction(formData: FormData, imageUrls: string[
   const attributes = attributesRaw ? JSON.parse(attributesRaw) : [];
   const faqs = faqsRaw ? JSON.parse(faqsRaw) : [];
 
-  // دریافت لینک مرجع (در صورت خالی بودن null ثبت می‌شود)
+  // دریافت مقادیر جدید
   const referenceUrl = (formData.get('referenceUrl') as string) || null;
+  const brandId = (formData.get('brandId') as string) || null;
   const isAvailable = formData.get('isAvailable') === 'true';
+  const isFeatured = formData.get('isFeatured') === 'true';
 
   try {
+    // 🌟 قانون تک-هیرو: اگر محصول جدید قرار است هیرو باشد، بقیه باید از حالت هیرو خارج شوند
+    if (isFeatured) {
+      await prisma.product.updateMany({
+        where: { isFeatured: true },
+        data: { isFeatured: false }
+      });
+    }
+
     await prisma.product.create({
       data: {
         title: title,
@@ -29,11 +39,12 @@ export async function createProductAction(formData: FormData, imageUrls: string[
         price: parseInt(formData.get('price') as string),
         discountedPrice: formData.get('discountedPrice') ? parseInt(formData.get('discountedPrice') as string) : null,
         isAvailable: isAvailable,
-        isFeatured: formData.get('isFeatured') === 'true',
+        isFeatured: isFeatured,
         categoryId: formData.get('categoryId') as string,
+        brandId: brandId, // 👈 ذخیره برند
         description: formData.get('description') as string,
         richDescription: (formData.get('richDescription') as string) || null,
-        referenceUrl: referenceUrl, // 👈 اضافه شد
+        referenceUrl: referenceUrl,
         stock: isAvailable ? 9999 : 0,
         
         images: imageUrls,      
@@ -77,11 +88,24 @@ export async function updateProductAction(id: string, formData: FormData, imageU
   const attributes = attributesRaw ? JSON.parse(attributesRaw) : [];
   const faqs = faqsRaw ? JSON.parse(faqsRaw) : [];
 
-  // دریافت لینک مرجع
+  // دریافت مقادیر جدید
   const referenceUrl = (formData.get('referenceUrl') as string) || null;
+  const brandId = (formData.get('brandId') as string) || null;
   const isAvailable = formData.get('isAvailable') === 'true';
+  const isFeatured = formData.get('isFeatured') === 'true';
 
   try {
+    // 🌟 قانون تک-هیرو: اگر قرار است این محصول هیرو شود، هیرو بودن بقیه (به جز خودش) را لغو می‌کنیم
+    if (isFeatured) {
+      await prisma.product.updateMany({
+        where: { 
+          isFeatured: true,
+          id: { not: id } // برای جلوگیری از آپدیت اضافی خودِ این محصول
+        },
+        data: { isFeatured: false }
+      });
+    }
+
     await prisma.product.update({
       where: { id },
       data: {
@@ -90,11 +114,12 @@ export async function updateProductAction(id: string, formData: FormData, imageU
         price: parseInt(formData.get('price') as string),
         discountedPrice: formData.get('discountedPrice') ? parseInt(formData.get('discountedPrice') as string) : null,
         isAvailable: isAvailable,
-        isFeatured: formData.get('isFeatured') === 'true',
+        isFeatured: isFeatured,
         categoryId: formData.get('categoryId') as string,
+        brandId: brandId, // 👈 آپدیت برند
         description: formData.get('description') as string,
         richDescription: (formData.get('richDescription') as string) || null,
-        referenceUrl: referenceUrl, // 👈 اضافه شد
+        referenceUrl: referenceUrl,
         stock: isAvailable ? 9999 : 0,
         
         images: imageUrls,      
@@ -130,7 +155,7 @@ export async function updateProductAction(id: string, formData: FormData, imageU
   }
 }
 
-// ۳. اکشن حذف محصول (بدون تغییر)
+// ۳. اکشن حذف محصول
 export async function deleteProductAction(id: string) {
   try {
     await prisma.product.delete({ where: { id } });
@@ -139,5 +164,30 @@ export async function deleteProductAction(id: string) {
     return { success: true };
   } catch (error) {
     return { success: false, error: 'خطا در حذف محصول' };
+  }
+}
+
+// ۴. تنظیم محصول هیرو (تغییر از طریق جدول کلاینت)
+export async function setHeroProductAction(productId: string) {
+  try {
+    // ۱. ابتدا وضعیت ویژه (هیرو) را از تمام محصولات حذف می‌کنیم
+    await prisma.product.updateMany({
+      where: { isFeatured: true },
+      data: { isFeatured: false }
+    });
+
+    // ۲. حالا محصول انتخاب شده را به عنوان تک محصولِ هیرو تنظیم می‌کنیم
+    await prisma.product.update({
+      where: { id: productId },
+      data: { isFeatured: true }
+    });
+
+    revalidatePath("/admin/products"); 
+    revalidatePath("/"); // برای آپدیت فوری صفحه اصلی سایت
+    
+    return { success: true };
+  } catch (error) {
+    console.error("Error setting hero product:", error);
+    return { success: false, error: "خطا در تنظیم محصول هیرو" };
   }
 }
