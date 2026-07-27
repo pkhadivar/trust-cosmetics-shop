@@ -4,6 +4,8 @@ import { SiteNavbar } from "@/components/site-navbar";
 import { SiteFooter } from "@/components/site-footer";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { ProfileTabs } from "@/components/profile-tabs";
+// 🌟 اضافه شدن ایمپورت پریزما
+import { prisma } from "@/lib/prisma"; 
 
 export default async function ProfilePage() {
   const session = await getServerSession(authOptions);
@@ -12,12 +14,29 @@ export default async function ProfilePage() {
     redirect("/");
   }
 
-  // آماده‌سازی دیتای کاربر برای پاس دادن به کامپوننت کلایت
+  // 🌟 استخراج اطلاعات زنده و به‌روز کاربر از دیتابیس
+  const freshUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      id: true,
+      name: true,
+      phone: true, 
+      role: true,
+    }
+  });
+
+  // اگر کاربر در دیتابیس پیدا نشد (مثلا پاک شده بود)
+  if (!freshUser) {
+    redirect("/");
+  }
+
+  // آماده‌سازی دیتای کاربر با اطلاعات تازه (Fresh) برای پاس دادن به کامپوننت کلاینت
   const user = {
-    id: session.user.id,
-    name: session.user.name || "کاربر عزیز",
-    email: session.user.email || "بدون شماره",
-    role: (session.user as any).role || "USER",
+    id: freshUser.id,
+    name: freshUser.name || "کاربر عزیز",
+    // چون در تنظیمات قبلی، موبایل را به جای ایمیل پاس داده بودیم، اینجا هم شماره را در پراپ ایمیل می‌گذاریم
+    email: freshUser.phone || "بدون شماره", 
+    role: freshUser.role || "USER",
   };
 
   return (

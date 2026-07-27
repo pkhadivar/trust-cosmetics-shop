@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useMemo, Suspense } from "react";
-// 🌟 اضافه شدن useSearchParams و usePathname
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Image from "next/image";
 import { User, MapPin, ShoppingBag, Shield, Phone, CheckCircle2, AlertCircle, Edit2, Trash2, X, Package, Clock, Truck, Heart } from "lucide-react";
@@ -114,6 +113,13 @@ function ProfileTabsContent({ user }: ProfileTabsProps) {
   const [nameInput, setNameInput] = useState(user.name === "کاربر عزیز" ? "" : user.name || "");
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateMessage, setUpdateMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // 🌟 همگام‌سازی اینپوت فرم با اطلاعات جدید دریافت شده از سرور
+  useEffect(() => {
+    if (user.name && user.name !== "کاربر عزیز") {
+      setNameInput(user.name);
+    }
+  }, [user.name]);
 
   const handleUpdateInfo = async (e: React.FormEvent) => {
     e.preventDefault();
