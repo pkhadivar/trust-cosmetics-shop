@@ -1,9 +1,8 @@
-// فایل فرم لاگین شما
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { signIn } from 'next-auth/react'; // <--- اضافه شد
+import { signIn } from 'next-auth/react'; 
 import { Button } from '@/components/ui/button';
 
 export default function LoginForm() {
@@ -12,8 +11,29 @@ export default function LoginForm() {
   const [otpCode, setOtpCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // 🌟 وضعیت تایمر (بر حسب ثانیه - مثلا 120 ثانیه معادل 2 دقیقه)
+  const [countdown, setCountdown] = useState(120);
 
   const router = useRouter();
+
+  // 🌟 هوک برای مدیریت شمارش معکوس تایمر
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (step === 'otp' && countdown > 0) {
+      timer = setInterval(() => {
+        setCountdown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [step, countdown]);
+
+  // 🌟 تابع کمکی برای نمایش زمان به فرمت 00:00
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
 
   const handleSendOTP = async () => {
     setLoading(true);
@@ -30,6 +50,8 @@ export default function LoginForm() {
       }
 
       setStep('otp');
+      // 🌟 ریست کردن تایمر هر بار که کد با موفقیت ارسال می‌شود
+      setCountdown(120); 
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -51,15 +73,10 @@ export default function LoginForm() {
         throw new Error(res.error);
       }
 
-      // در صورت موفقیت:
       router.push('/profile');
-      router.refresh(); // به Next.js می‌گوییم کوکی‌های جدید را بلافاصله بخواند
-      
-      // نکته مهم: اینجا setLoading(false) را صدا نمی‌زنیم!
-      // اجازه می‌دهیم دکمه در حالت "در حال بررسی..." بماند تا کاربر به صفحه جدید منتقل شود.
+      router.refresh(); 
 
     } catch (err) {
-      // فقط اگر خطایی رخ داد، دکمه را دوباره برای کلیک فعال می‌کنیم
       setError((err as Error).message);
       setLoading(false); 
     }
@@ -133,13 +150,31 @@ export default function LoginForm() {
             {loading ? 'در حال بررسی...' : 'ورود به حساب'}
           </Button>
           
-          <button 
-            type="button"
-            onClick={() => setStep('phone')} 
-            className="text-sm text-muted-foreground hover:text-gold mt-4"
-          >
-            ویرایش شماره تماس
-          </button>
+          {/* 🌟 بخش پایینی: ویرایش شماره و تایمر/ارسال مجدد */}
+          <div className="flex items-center justify-between mt-4">
+            <button 
+              type="button"
+              onClick={() => setStep('phone')} 
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              ویرایش شماره
+            </button>
+
+            {countdown > 0 ? (
+              <span className="text-sm text-muted-foreground font-medium" dir="ltr">
+                {formatTime(countdown)}
+              </span>
+            ) : (
+              <button 
+                type="button"
+                onClick={handleSendOTP}
+                disabled={loading}
+                className="text-sm text-gold hover:text-yellow-500 transition-colors font-bold disabled:opacity-50"
+              >
+                ارسال مجدد کد
+              </button>
+            )}
+          </div>
         </form>
       )}
     </>

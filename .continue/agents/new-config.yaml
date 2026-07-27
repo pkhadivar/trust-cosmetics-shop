@@ -1,0 +1,78 @@
+allowAnonymousTelemetry: false
+
+name: Local Dev Assistant
+version: 1.0.0
+schema: v1
+
+models:
+  # Hot path — every keystroke
+  - name: Qwen2.5-Coder 1.5B (Autocomplete)
+    provider: ollama
+    model: qwen2.5-coder:1.5b-base
+    apiBase: http://localhost:11434
+    roles:
+      - autocomplete
+    defaultCompletionOptions:
+      temperature: 0
+      topP: 1
+      topK: 1
+      maxTokens: 256
+    autocompleteOptions:
+      debounceDelay: 150
+      maxPromptTokens: 2048
+      prefixPercentage: 0.6
+      maxSuffixPercentage: 0.3
+      multilineCompletions: auto
+      useCache: true
+    keepAlive: 3600
+
+  # Cold path — chat, review, doc generation, applying edits
+  - name: Qwen3-Coder 30B (Chat/Edit/Apply)
+    provider: ollama
+    model: qwen3-coder:30b
+    apiBase: http://localhost:11434
+    roles:
+      - chat
+      - edit
+      - apply
+      - summarize
+    defaultCompletionOptions:
+      temperature: 0.2
+      maxTokens: 4096
+      contextLength: 32768
+    keepAlive: 1800
+
+  # Codebase indexing for @codebase / @docs
+  - name: Nomic Embed
+    provider: ollama
+    model: nomic-embed-text
+    apiBase: http://localhost:11434
+    roles:
+      - embed
+    embedOptions:
+      maxChunkSize: 512
+      maxBatchSize: 32
+
+context:
+  - provider: codebase
+  - provider: tree
+  - provider: folder
+  - provider: open
+  - provider: diff
+  - provider: problems
+  - provider: terminal
+
+prompts:
+  - name: review
+    description: Review selected code or the codebase for correctness and risk
+    prompt: |
+      Review the attached code for correctness, error handling, naming, and
+      consistency with the rest of the codebase. Call out concrete risks,
+      not stylistic nitpicks. Suggest specific fixes.
+
+  - name: gen-docs
+    description: Generate/update a Markdown doc for the selected module
+    prompt: |
+      Generate a concise Markdown section for the selected code: purpose,
+      public API, key types/functions, and one usage example. Match the
+      existing documentation style in this repository.
