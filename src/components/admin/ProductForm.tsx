@@ -8,12 +8,12 @@ import { uploadFilesAction } from "@/actions/upload";
 
 type Category = { id: string; name: string; };
 type Tag = { id: string; name: string; };
-type Brand = { id: string; name: string; }; // 👈 تایپ برند اضافه شد
+type Brand = { id: string; name: string; };
 
 type ProductFormProps = {
   categories: Category[];
   tags: Tag[];
-  brands: Brand[]; // 👈 پراپ برندها اضافه شد
+  brands: Brand[];
   initialData?: any;
 };
 
@@ -67,18 +67,13 @@ export default function ProductForm({ categories, tags, brands, initialData }: P
     const formElement = e.currentTarget;
     const mainFormData = new FormData(formElement);
 
-    // 🌟 تغییری که اضافه شد: ثبت اجباری وضعیت چک‌باکس‌ها در فرم دیتا
     const isAvailableInput = formElement.querySelector('input[name="isAvailable"]') as HTMLInputElement;
     mainFormData.set("isAvailable", isAvailableInput?.checked ? "true" : "false");
 
     const isFeaturedInput = formElement.querySelector('input[name="isFeatured"]') as HTMLInputElement;
     mainFormData.set("isFeatured", isFeaturedInput?.checked ? "true" : "false");
-    // -------------------------------------------------------------
 
-    if (existingImages.length === 0 && selectedImages.length === 0) {
-      setError("لطفاً حداقل یک فایل تصویر برای محصول انتخاب کنید.");
-      return;
-    }
+    // 🌟 شرط اجباری بودن عکس از اینجا حذف شد تا آپلود کاملاً اختیاری باشد
 
     startTransition(async () => {
       try {
@@ -143,7 +138,6 @@ export default function ProductForm({ categories, tags, brands, initialData }: P
         <div className="space-y-2"><label className="text-sm text-muted-foreground">قیمت (تومان) *</label><input name="price" type="number" required defaultValue={initialData?.price} dir="ltr" className="w-full rounded-xl border border-border bg-secondary/40 px-4 py-2.5 text-left focus:border-gold focus:outline-none" /></div>
         <div className="space-y-2"><label className="text-sm text-muted-foreground">قیمت با تخفیف</label><input name="discountedPrice" type="number" defaultValue={initialData?.discountedPrice} dir="ltr" className="w-full rounded-xl border border-border bg-secondary/40 px-4 py-2.5 text-left focus:border-gold focus:outline-none" /></div>
         
-        {/* فیلد دسته‌بندی */}
         <div className="space-y-2">
           <label className="text-sm text-muted-foreground">دسته‌بندی *</label>
           <select name="categoryId" required defaultValue={initialData?.categoryId} className="w-full rounded-xl border border-border bg-secondary/40 px-4 py-2.5 focus:border-gold focus:outline-none appearance-none">
@@ -152,7 +146,6 @@ export default function ProductForm({ categories, tags, brands, initialData }: P
           </select>
         </div>
 
-        {/* 🌟 فیلد برند (جدید) */}
         <div className="space-y-2">
           <label className="text-sm text-muted-foreground">برند (اختیاری)</label>
           <select name="brandId" defaultValue={initialData?.brandId || ""} className="w-full rounded-xl border border-border bg-secondary/40 px-4 py-2.5 focus:border-gold focus:outline-none appearance-none">
@@ -163,7 +156,6 @@ export default function ProductForm({ categories, tags, brands, initialData }: P
           </select>
         </div>
 
-        {/* فیلد لینک مرجع لیا تیم */}
         <div className="space-y-2 md:col-span-2">
           <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <LinkIcon className="size-4 text-gold" />
@@ -200,7 +192,7 @@ export default function ProductForm({ categories, tags, brands, initialData }: P
       <div className="space-y-6 rounded-2xl border border-border/60 bg-secondary/10 p-5">
         <div>
           <label className="flex items-center gap-2 text-sm font-bold text-foreground mb-4">
-            <ImageIcon className="size-4 text-gold" /> گالری تصاویر محصول *
+            <ImageIcon className="size-4 text-gold" /> گالری تصاویر محصول (اختیاری)
           </label>
           <label className="flex flex-col items-center justify-center w-full bg-background border-2 border-border border-dashed rounded-xl p-8 hover:border-gold hover:bg-gold/5 cursor-pointer transition-colors">
             <UploadCloud className="size-8 text-muted-foreground mb-2" />
