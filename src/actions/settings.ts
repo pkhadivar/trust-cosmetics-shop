@@ -2,8 +2,21 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { z } from 'zod';
 
-// ... (متدهای قبلی تغییری نمی‌کنند) ...
+async function checkAdminAccess() {
+  const session = await getServerSession(authOptions);
+  if (!session || (session.user as any).role !== 'ADMIN') return false;
+  return true;
+}
+
+const campaignSchema = z.object({
+  campaignIsActive: z.boolean(),
+  campaignTitle: z.string().nullable(),
+  campaignEndDate: z.date().nullable()
+});
 
 export async function getStoreSettings() {
   try {
@@ -28,8 +41,12 @@ export async function getStoreSettings() {
 }
 
 export async function updateShippingCostAction(cost: number) {
-  // ... (کدهای قبلی)
+  const isAdmin = await checkAdminAccess();
+  if (!isAdmin) return { success: false, error: "دسترسی غیرمجاز!" };
+
   try {
+    if (typeof cost !== 'number' || cost < 0) return { success: false, error: "مبلغ نامعتبر است" };
+
     await prisma.storeSettings.upsert({
       where: { id: "global" },
       update: { shippingCost: cost },
@@ -43,18 +60,24 @@ export async function updateShippingCostAction(cost: number) {
   }
 }
 
-// 👈 در اینجا campaignLink را از تایپ ورودی حذف می‌کنیم
-
 export async function updateCampaignSettingsAction(data: {
   campaignIsActive: boolean;
   campaignTitle: string | null;
   campaignEndDate: Date | null;
 }) {
+  const isAdmin = await checkAdminAccess();
+  if (!isAdmin) return { success: false, error: "دسترسی غیرمجاز!" };
+
   try {
+    const validatedData = campaignSchema.safeParse(data);
+    if (!validatedData.success) {
+      return { success: false, error: validatedData.error.issues[0].message };
+    }
+
     await prisma.storeSettings.upsert({
       where: { id: "global" },
-      update: { ...data, campaignLink: "/shop?discount=true" },
-      create: { id: "global", shippingCost: 50000, ...data, campaignLink: "/shop?discount=true" },
+      update: { ...validatedData.data, campaignLink: "/shop?discount=true" },
+      create: { id: "global", shippingCost: 50000, ...validatedData.data, campaignLink: "/shop?discount=true" },
     });
     
     revalidatePath("/");
@@ -63,8 +86,6 @@ export async function updateCampaignSettingsAction(data: {
     return { success: true };
   } catch (error: any) {
     console.error("خطا در ذخیره تنظیمات کمپین:", error);
-    
-    // 👈 این خط را تغییر دادیم تا ارور اصلی دیتابیس در پیام Toast نمایش داده شود
     return { success: false, error: String(error.message || error) };
   }
 }

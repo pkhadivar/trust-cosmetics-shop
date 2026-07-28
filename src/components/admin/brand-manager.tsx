@@ -22,7 +22,6 @@ export function BrandManager({ brands }: { brands: any[] }) {
 
     startTransition(async () => {
       try {
-        // اگر در حالت ویرایش باشیم، لوگوی پیش‌فرض همان لوگوی قبلی است
         let finalLogoUrl = editingBrand ? editingBrand.logo : null;
 
         if (selectedFile) {
@@ -37,11 +36,18 @@ export function BrandManager({ brands }: { brands: any[] }) {
           }
         }
 
+        // 🌟 به جای ارسال به عنوان آرگومان جداگانه، آن را به formData اضافه می‌کنیم
+        if (finalLogoUrl) {
+          formData.set("logo", finalLogoUrl);
+        }
+
         let res;
         if (editingBrand) {
-          res = await updateBrand(editingBrand.id, formData, finalLogoUrl);
+          // حالا دقیقاً ۲ آرگومان ارسال می‌شود: آیدی و فرم‌دیتا
+          res = await updateBrand(editingBrand.id, formData);
         } else {
-          res = await createBrand(formData, finalLogoUrl);
+          // اینجا هم فقط ۱ آرگومان ارسال می‌شود: فرم‌دیتا
+          res = await createBrand(formData);
         }
         
         if (res.success) {

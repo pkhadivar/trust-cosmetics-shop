@@ -56,7 +56,14 @@ export default function CategoryModal({ category, isOpen, onClose }: any) {
       }
 
       // ارسال به دیتابیس با آدرس نهایی عکس
-      const result = await updateCategoryAction(category.id, nameValue, finalImageUrl);
+      const formData = new FormData();
+      formData.set("name", nameValue);
+      if (finalImageUrl) {
+        formData.set("image", finalImageUrl);
+      }
+      
+      // حالا فقط دو آرگومان می‌فرستیم
+      const result = await updateCategoryAction(category.id, formData);
       if (result?.success !== false) {
         toast.success('دسته‌بندی با موفقیت ویرایش شد');
         handleClose();
