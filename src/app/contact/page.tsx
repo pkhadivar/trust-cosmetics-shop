@@ -65,15 +65,11 @@ export default function ContactPage() {
                 <h3 className="font-bold text-foreground mb-3">ساعات کاری</h3>
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li className="flex justify-between border-b border-border/50 pb-2">
-                    <span>شنبه تا سه‌شنبه:</span>
+                    <span>شنبه تا پنجشنبه:</span>
                     <span>۰۹:۰۰ تا ۱۸:۰۰</span>
                   </li>
-                  <li className="flex justify-between border-b border-border/50 pb-2">
-                    <span>چهارشنبه:</span>
-                    <span>۰۹:۰۰ تا ۱۷:۰۰</span>
-                  </li>
                   <li className="flex justify-between text-red-500/80 mt-2">
-                    <span>پنجشنبه و جمعه:</span>
+                    <span> جمعه:</span>
                     <span>تعطیل</span>
                   </li>
                 </ul>
