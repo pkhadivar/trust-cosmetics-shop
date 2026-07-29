@@ -92,6 +92,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
               <WishlistShareButtons 
                 productId={product.id} 
                 productTitle={product.title} 
+                initialIsSaved={initialIsSaved}
               />
             </div>
 

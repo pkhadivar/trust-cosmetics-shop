@@ -4,24 +4,22 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Plus, Heart, Loader2, Ban } from "lucide-react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 
-// نکته: مطمئن شوید isAvailable به تایپ CartProduct پاس داده شود
 import { addToCart, type CartProduct } from "@/store/cartSlice";
-import { selectSavedProductIds, toggleWishlistItem } from "@/store/wishlistSlice";
-import type { RootState } from "@/store/store";
+import { toggleWishlistItem } from "@/store/wishlistSlice";
 import { calculateDiscount } from "@/utils/math"; 
 import { toggleWishlistAction } from "@/actions/wishlist";
 
-export function ProductCard({ product }: { product: CartProduct & { tags?: string[], isAvailable?: boolean } }) {
+// 🌟 اضافه شدن isSaved به تایپ محصول
+export function ProductCard({ product }: { product: CartProduct & { tags?: string[], isAvailable?: boolean, isSaved?: boolean } }) {
   const dispatch = useDispatch();
   const { data: session } = useSession();
   
-  const savedProductIds = useSelector((state: RootState) => selectSavedProductIds(state));
-  const isSaved = savedProductIds.includes(product.id);
-  
+  // 🌟 استفاده از استیت لوکال با مقدار اولیه سرور برای جلوگیری از خالی بودن قلب در لود اولیه
+  const [isSaved, setIsSaved] = useState(product.isSaved || false);
   const [isPending, setIsPending] = useState(false);
 
   // بررسی وضعیت موجودی
@@ -58,13 +56,19 @@ export function ProductCard({ product }: { product: CartProduct & { tags?: strin
     }
 
     setIsPending(true);
+    const newSavedState = !isSaved;
+    
+    // 🌟 آپدیت آنی رابط کاربری و ارسال به ریداکس
+    setIsSaved(newSavedState);
     dispatch(toggleWishlistItem(product.id));
 
     const result = await toggleWishlistAction(product.id, userId);
     
     if (result.success) {
-      toast.success(isSaved ? "از لیست علاقه‌مندی‌ها حذف شد" : "به لیست علاقه‌مندی‌ها اضافه شد");
+      toast.success(newSavedState ? "به لیست علاقه‌مندی‌ها اضافه شد" : "از لیست علاقه‌مندی‌ها حذف شد");
     } else {
+      // بازگردانی در صورت خطای سرور
+      setIsSaved(!newSavedState);
       dispatch(toggleWishlistItem(product.id));
       toast.error(result.error || "خطایی رخ داد");
     }

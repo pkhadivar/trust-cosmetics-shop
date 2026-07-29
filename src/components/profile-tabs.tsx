@@ -108,6 +108,11 @@ function ProfileTabsContent({ user }: ProfileTabsProps) {
   const [activeTab, setActiveTab] = useState<"info" | "addresses" | "orders" | "wishlist">(
     tabParam && validTabs.includes(tabParam) ? tabParam : "info"
   );
+
+  // 🌟 استیت‌های جدید برای جلوگیری از ریکوئست‌های تکراری و خطای دیتابیس
+  const [hasFetchedAddresses, setHasFetchedAddresses] = useState(false);
+  const [hasFetchedOrders, setHasFetchedOrders] = useState(false);
+  const [hasFetchedWishlist, setHasFetchedWishlist] = useState(false);
   
   // ۱. استیت‌های اطلاعات حساب
   const [nameInput, setNameInput] = useState(user.name === "کاربر عزیز" ? "" : user.name || "");
@@ -174,17 +179,21 @@ function ProfileTabsContent({ user }: ProfileTabsProps) {
     }
   }, [searchParams]);
 
+  // 🌟 فراخوانی هوشمند APIها (جلوگیری از قطع شدن Connection دیتابیس)
   useEffect(() => {
-    if (activeTab === "addresses") fetchAddresses();
-    if (activeTab === "orders") fetchOrders();
-    if (activeTab === "wishlist") fetchWishlist();
-  }, [activeTab]);
+    if (activeTab === "addresses" && !hasFetchedAddresses) fetchAddresses();
+    if (activeTab === "orders" && !hasFetchedOrders) fetchOrders();
+    if (activeTab === "wishlist" && !hasFetchedWishlist) fetchWishlist();
+  }, [activeTab, hasFetchedAddresses, hasFetchedOrders, hasFetchedWishlist]);
 
   const fetchAddresses = async () => {
     setIsLoadingAddresses(true);
     try {
       const res = await fetch("/api/user/addresses");
-      if (res.ok) setAddresses(await res.json());
+      if (res.ok) {
+        setAddresses(await res.json());
+        setHasFetchedAddresses(true); // علامت‌گذاری به عنوان لود شده
+      }
     } catch (error) {
       console.error("Error fetching addresses:", error);
     } finally {
@@ -196,7 +205,10 @@ function ProfileTabsContent({ user }: ProfileTabsProps) {
     setIsLoadingOrders(true);
     try {
       const res = await fetch("/api/user/orders");
-      if (res.ok) setOrders(await res.json());
+      if (res.ok) {
+        setOrders(await res.json());
+        setHasFetchedOrders(true); // علامت‌گذاری به عنوان لود شده
+      }
     } catch (error) {
       console.error("Error fetching orders:", error);
     } finally {
@@ -208,7 +220,10 @@ function ProfileTabsContent({ user }: ProfileTabsProps) {
     setIsLoadingWishlist(true);
     try {
       const res = await fetch("/api/user/wishlist");
-      if (res.ok) setWishlist(await res.json());
+      if (res.ok) {
+        setWishlist(await res.json());
+        setHasFetchedWishlist(true); // علامت‌گذاری به عنوان لود شده
+      }
     } catch (error) {
       console.error("Error fetching wishlist:", error);
     } finally {
@@ -234,6 +249,8 @@ function ProfileTabsContent({ user }: ProfileTabsProps) {
       setAddressForm({ title: "", state: "", city: "", fullAddress: "", postalCode: "" }); 
       setSelectedProvinceId("");
       setEditingAddressId(null);
+      // بعد از ثبت باید دوباره از سرور بگیریم
+      setHasFetchedAddresses(false); 
       fetchAddresses(); 
     } catch (error: any) {
       setAddressMessage({ type: "error", text: error.message });
@@ -530,20 +547,22 @@ function ProfileTabsContent({ user }: ProfileTabsProps) {
                    {order.items.map((item: any) => (
                      <div key={item.id} className="flex items-center justify-between bg-secondary/10 hover:bg-secondary/20 rounded-xl p-3 border border-border/40 w-full transition-colors">
       
-                       {/* بخش عکس و نام محصول */}
-      <                 div className="flex items-center gap-4">
+                       {/* بخش عکس و نام محصول با رفع مشکل خطای Null */}
+                       <div className="flex items-center gap-4">
                          <div className="relative size-14 rounded-lg overflow-hidden bg-[#050810] border border-border shrink-0">
                            <Image 
-                             src={item.product.images[0] || "/placeholder.jpg"} 
-                             alt={item.product.title} 
+                             src={item.product?.images?.[0] || "/placeholder.jpg"} 
+                             alt={item.product?.title || "محصول حذف شده"} 
                              fill 
                              className="object-contain p-1"
                            />
                          </div>
                          <div className="flex flex-col text-right">
-                           <span className="text-sm font-bold text-foreground line-clamp-1">{item.product.title}</span>
+                           <span className="text-sm font-bold text-foreground line-clamp-1">
+                             {item.product?.title || "محصول ناموجود (حذف شده)"}
+                           </span>
                            <span className="text-xs text-muted-foreground mt-1">
-            {                 item.price.toLocaleString('fa-IR')} تومان <span className="mx-1 text-gold">×</span> {item.quantity} عدد
+                             {item.price.toLocaleString('fa-IR')} تومان <span className="mx-1 text-gold">×</span> {item.quantity} عدد
                            </span>
                          </div>
                        </div>
