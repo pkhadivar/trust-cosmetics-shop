@@ -44,7 +44,7 @@ const productSchema = z.object({
   
   faqs: z.array(z.object({
     question: z.string().min(5, "سوال باید حداقل ۵ کاراکتر باشد"),
-    answer: z.string().min(5, "پاسخ باید حداقل ۵ کاراکتر باشد")
+    answer: z.string().min(3, "پاسخ باید حداقل ۵ کاراکتر باشد")
   })).default([]),
 });
 

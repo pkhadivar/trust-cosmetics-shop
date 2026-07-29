@@ -1,17 +1,25 @@
-// فایل: src/components/product-showcase.tsx
 import { prisma } from "@/lib/prisma";
 import { ProductCard } from "@/components/product-card";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+// 🌟 اضافه شدن ایمپورت سشن
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export async function ProductShowcase() {
-  // ۱. دریافت ۶ محصول جدید و موجود در انبار
+  
+  // 🌟 دریافت سشن
+  const session = await getServerSession(authOptions);
+  const userId = (session?.user as any)?.id;
+
   const latestProducts = await prisma.product.findMany({
     where: { 
       isAvailable: true, 
     },
     include: {
-      tags: true 
+      tags: true,
+      // 🌟 چک کردن لایک
+      savedByUsers: userId ? { where: { id: userId }, select: { id: true } } : false 
     },
     orderBy: { 
       createdAt: 'desc' 
@@ -19,7 +27,6 @@ export async function ProductShowcase() {
     take: 6 
   });
 
-  // ۲. تبدیل فرمت دیتای دیتابیس
   const formattedProducts = latestProducts.map((product) => ({
     id: product.id,
     title: product.title,
@@ -30,6 +37,8 @@ export async function ProductShowcase() {
     badge: product.tags?.[0]?.name || null, 
     tags: product.tags.map(t => t.name),    
     isAvailable: product.isAvailable, 
+    // 🌟 پاس دادن لایک به فرمت جدید
+    isSaved: userId && product.savedByUsers ? product.savedByUsers.length > 0 : false,
   }));
 
   return (
@@ -38,7 +47,6 @@ export async function ProductShowcase() {
       className="mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:py-24"
       dir="rtl"
     >
-      {/* هدر بخش */}
       <div className="text-center">
         <span className="text-sm font-medium text-gold">کلکسیون ویژه</span>
         <h2 className="mt-3 text-balance text-3xl font-bold sm:text-4xl text-foreground">
@@ -51,7 +59,6 @@ export async function ProductShowcase() {
         <div className="mx-auto mt-4 h-px w-24 gold-divider" aria-hidden />
       </div>
 
-      {/* گرید محصولات */}
       <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {formattedProducts.length === 0 ? (
           <div className="col-span-full text-center py-20 text-muted-foreground bg-card/50 rounded-2xl border border-border">
@@ -64,7 +71,6 @@ export async function ProductShowcase() {
         )}
       </div>
 
-      {/* 🌟 دکمه مشاهده همه محصولات */}
       {formattedProducts.length > 0 && (
         <div className="mt-12 flex justify-center">
           <Link

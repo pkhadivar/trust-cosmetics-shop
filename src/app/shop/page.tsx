@@ -1,6 +1,10 @@
 import React from 'react';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
+// 🌟 اضافه شدن ایمپورت‌های سشن
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+
 import { SiteNavbar } from '@/components/site-navbar';
 import { SiteFooter } from '@/components/site-footer';
 import { ProductCard } from '@/components/product-card';
@@ -13,10 +17,14 @@ export default async function ShopPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }> 
 }) {
   const resolvedParams = await searchParams;
+  
+  // 🌟 دریافت سشن کاربر
+  const session = await getServerSession(authOptions);
+  const userId = (session?.user as any)?.id;
 
   const q = typeof resolvedParams.q === 'string' ? resolvedParams.q : undefined;
   const categoryId = typeof resolvedParams.category === 'string' ? resolvedParams.category : undefined;
-  const brandId = typeof resolvedParams.brand === 'string' ? resolvedParams.brand : undefined; // 👈 پارامتر برند اضافه شد
+  const brandId = typeof resolvedParams.brand === 'string' ? resolvedParams.brand : undefined;
   const inStock = resolvedParams.inStock === 'true';
   const isDiscounted = resolvedParams.discount === 'true';
   const tagQuery = resolvedParams.tag;
@@ -35,7 +43,7 @@ export default async function ShopPage({
   if (categoryId) {
     whereClause.categoryId = categoryId;
   }
-  if (brandId) { // 👈 اعمال فیلتر برند در کوئری دیتابیس
+  if (brandId) { 
     whereClause.brandId = brandId;
   }
   if (tags.length > 0) {
@@ -55,7 +63,6 @@ export default async function ShopPage({
     orderByClause = { price: 'desc' };
   }
 
-  // 👈 دریافت برندها همزمان با بقیه اطلاعات
   const [categories, allTags, brands, products] = await Promise.all([
     prisma.category.findMany({ orderBy: { name: 'asc' } }),
     prisma.tag.findMany({ orderBy: { name: 'asc' } }),
@@ -63,7 +70,11 @@ export default async function ShopPage({
     prisma.product.findMany({
       where: whereClause,
       orderBy: orderByClause,
-      include: { tags: true }
+      include: { 
+        tags: true,
+        // 🌟 اضافه کردن شرط چک کردن لایک کاربر
+        savedByUsers: userId ? { where: { id: userId }, select: { id: true } } : false
+      }
     })
   ]);
 
@@ -77,11 +88,12 @@ export default async function ShopPage({
     badge: product.tags?.[0]?.name || null,
     tags: product.tags.map(t => t.name),
     isAvailable: product.isAvailable,
+    // 🌟 پاس دادن وضعیت لایک به صورت بولین
+    isSaved: userId && product.savedByUsers ? product.savedByUsers.length > 0 : false,
   }));
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      
       <div className="bg-card border-b border-border py-12 px-5">
         <div className="mx-auto max-w-7xl text-center">
           <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
@@ -98,8 +110,6 @@ export default async function ShopPage({
       </div>
 
       <main className="flex-1 mx-auto max-w-7xl w-full px-5 py-8 md:py-12 flex flex-col lg:flex-row gap-8">
-        
-        {/* 👈 برندها را به عنوان پراپ به کامپوننت فیلتر می‌فرستیم */}
         <ShopFilters categories={categories} tags={allTags} brands={brands} />
 
         <div className="flex-1 flex flex-col gap-6">
@@ -107,9 +117,7 @@ export default async function ShopPage({
             <span className="text-sm font-medium text-muted-foreground">
               نمایش <strong className="text-gold">{formattedProducts.length}</strong> محصول
             </span>
-            
             <ShopSort />
-
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -128,7 +136,6 @@ export default async function ShopPage({
           </div>
         </div>
       </main>
-      
     </div>
   );
 }

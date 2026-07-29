@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation"; // 🌟 اضافه شد
 import { useDispatch, useSelector } from "react-redux";
 import { ChevronDown, Menu, Search, ShoppingBag, X, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,19 +19,23 @@ const navItems = [
 ];
 
 export function SiteNavbar() {
+  const router = useRouter(); // 🌟 برای هدایت کاربر به صفحه فروشگاه
   const dispatch = useDispatch();
+  
   const [menuOpen, setMenuOpen] = useState(false);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(false);
   
-  // استیت برای نگهداری دسته‌بندی‌های دیتابیس
+  // 🌟 استیت‌های مربوط به جستجو اضافه شد
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
   const [dbCategories, setDbCategories] = useState<any[]>([]);
 
   const cartItemCount = useSelector((state: RootState) =>
     selectCartItemCount(state),
   );
 
-  // دریافت امن اطلاعات از دیتابیس در سمت کلاینت
   useEffect(() => {
     async function fetchCategories() {
       const cats = await getNavbarCategoriesAction();
@@ -39,8 +44,18 @@ export function SiteNavbar() {
     fetchCategories();
   }, []);
 
+  // 🌟 تابع اجرای جستجو
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/shop?q=${encodeURIComponent(searchQuery.trim())}`);
+      setIsSearchOpen(false); // بستن کادر بعد از جستجو
+      setSearchQuery(""); // خالی کردن کادر
+    }
+  };
+
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl transition-all">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-8">
         <Link
           href="/"
@@ -89,7 +104,7 @@ export function SiteNavbar() {
                   {dbCategories.map((category) => (
                     <div key={category.id} className="mb-2 flex flex-col last:mb-0">
                       <Link
-                        href={`/shop?category=${category.id}`} // مسیر جدید
+                        href={`/shop?category=${category.id}`} 
                         className="rounded-xl px-4 py-2.5 text-sm font-bold text-foreground transition-colors hover:bg-secondary/80 hover:text-gold"
                         onClick={() => setCategoriesOpen(false)}
                       >
@@ -100,7 +115,7 @@ export function SiteNavbar() {
                           {category.children.map((child: any) => (
                             <li key={child.id}>
                               <Link
-                                href={`/shop?category=${child.id}`} // مسیر جدید برای زیردسته‌ها
+                                href={`/shop?category=${child.id}`} 
                                 className="block rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary/50 hover:text-gold"
                                 onClick={() => setCategoriesOpen(false)}
                               >
@@ -119,13 +134,15 @@ export function SiteNavbar() {
         </nav>
 
         <div className="flex items-center gap-2">
+          {/* 🌟 دکمه جستجو که مودال کادر جستجو را باز و بسته می‌کند */}
           <Button
             size="icon"
             variant="ghost"
             className="text-foreground/80 hover:bg-secondary hover:text-gold"
             aria-label="جستجو"
+            onClick={() => setIsSearchOpen(!isSearchOpen)}
           >
-            <Search className="size-5" />
+            {isSearchOpen ? <X className="size-5 text-gold" /> : <Search className="size-5" />}
           </Button>
 
           <Link href="/profile" passHref>
@@ -166,6 +183,26 @@ export function SiteNavbar() {
         </div>
       </div>
 
+      {/* 🌟 پنل کادر جستجو (زیر نوبار باز می‌شود) */}
+      {isSearchOpen && (
+        <div className="absolute top-full left-0 right-0 border-b border-border bg-card/95 backdrop-blur-md p-4 shadow-xl animate-in slide-in-from-top-4 fade-in duration-200">
+          <form onSubmit={handleSearch} className="mx-auto flex max-w-3xl items-center gap-3">
+            <input
+              type="text"
+              autoFocus
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="جستجوی نام یا مدل محصول..."
+              className="flex-1 rounded-xl border border-border bg-background px-4 py-3 text-sm focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold"
+            />
+            <Button type="submit" disabled={!searchQuery.trim()} className="rounded-xl bg-gold text-[#0a0f1c] px-6 py-3 font-bold hover:bg-yellow-500">
+              بگرد
+            </Button>
+          </form>
+        </div>
+      )}
+
+      {/* منوی موبایل */}
       {menuOpen && (
         <div className="border-t border-border bg-background md:hidden">
           <nav className="mx-auto max-w-7xl space-y-1 px-5 py-4 sm:px-8">
@@ -205,7 +242,7 @@ export function SiteNavbar() {
                 {dbCategories.map((category) => (
                   <div key={category.id}>
                     <Link
-                      href={`/shop?category=${category.id}`} // مسیر جدید موبایل
+                      href={`/shop?category=${category.id}`} 
                       className="text-sm font-semibold text-foreground transition-colors hover:text-gold"
                       onClick={() => setMenuOpen(false)}
                     >
@@ -216,7 +253,7 @@ export function SiteNavbar() {
                         {category.children.map((child: any) => (
                           <li key={child.id}>
                             <Link
-                              href={`/shop?category=${child.id}`} // مسیر جدید زیردسته‌های موبایل
+                              href={`/shop?category=${child.id}`} 
                               className="text-sm text-muted-foreground transition-colors hover:text-gold"
                               onClick={() => setMenuOpen(false)}
                             >

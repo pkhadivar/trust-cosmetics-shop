@@ -3,26 +3,24 @@
 import { useState } from "react";
 import { Heart, Share2, Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import toast from "react-hot-toast";
 
-import { selectSavedProductIds, toggleWishlistItem } from "@/store/wishlistSlice";
-import type { RootState } from "@/store/store";
+import { toggleWishlistItem } from "@/store/wishlistSlice";
 import { toggleWishlistAction } from "@/actions/wishlist";
 
 interface Props {
   productId: string;
   productTitle: string;
+  initialIsSaved?: boolean; // 🌟 این فیلد اضافه شد تا دیتای سرور را بگیرد
 }
 
-// نکته: نیازی به پاس دادن initialIsSaved از سرور نیست چون ریداکس مدیریت می‌کند
-export function WishlistShareButtons({ productId, productTitle }: Props) {
+export function WishlistShareButtons({ productId, productTitle, initialIsSaved = false }: Props) {
   const { data: session } = useSession();
   const dispatch = useDispatch();
   
-  const savedProductIds = useSelector((state: RootState) => selectSavedProductIds(state));
-  const isSaved = savedProductIds.includes(productId);
-
+  // 🌟 استفاده از استیت لوکال برای رندر سریع و بدون پرش (گرفته شده از سرور)
+  const [isSaved, setIsSaved] = useState(initialIsSaved);
   const [isPending, setIsPending] = useState(false);
 
   const handleToggleSave = async () => {
@@ -33,14 +31,20 @@ export function WishlistShareButtons({ productId, productTitle }: Props) {
     }
 
     setIsPending(true);
-    dispatch(toggleWishlistItem(productId)); // آپدیت آنی
+    const newSavedState = !isSaved;
+    
+    // آپدیت آنی رابط کاربری (Optimistic UI)
+    setIsSaved(newSavedState); 
+    dispatch(toggleWishlistItem(productId)); // ارسال به ریداکس برای آپدیت بقیه بخش‌ها
 
     const result = await toggleWishlistAction(productId, userId);
     
     if (result.success) {
-      toast.success(isSaved ? "از لیست حذف شد" : "به لیست علاقه‌مندی‌ها اضافه شد");
+      toast.success(newSavedState ? "به لیست علاقه‌مندی‌ها اضافه شد" : "از لیست حذف شد");
     } else {
-      dispatch(toggleWishlistItem(productId)); // بازگردانی در صورت خطا
+      // بازگردانی تغییرات در صورت خطای سرور
+      setIsSaved(!newSavedState);
+      dispatch(toggleWishlistItem(productId)); 
       toast.error(result.error || "خطایی رخ داد");
     }
     setIsPending(false);
@@ -56,7 +60,7 @@ export function WishlistShareButtons({ productId, productTitle }: Props) {
           url: productUrl,
         });
       } catch (error) {
-        // کاربر انصراف داده است
+        // انصراف کاربر
       }
     } else {
       navigator.clipboard.writeText(productUrl);

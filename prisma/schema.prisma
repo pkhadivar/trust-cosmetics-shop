@@ -28,23 +28,22 @@ enum OrderStatus {
 
 model User {
   id            String    @id @default(cuid())
-  phone         String?   @unique // شماره موبایل (برای ورود با OTP)
-  name          String?   // نام و نام‌خانوادگی
-  email         String?   @unique // ایمیل (برای NextAuth و لاگین احتمالی با گوگل)
+  phone         String?   @unique 
+  name          String?   
+  email         String?   @unique 
   emailVerified DateTime?
-  image         String?   // عکس پروفایل
+  image         String?   
   role          Role      @default(USER)
   
   addresses     Address[]
   orders        Order[]
-  accounts      Account[] // ارتباط با اکانت‌های NextAuth
-  sessions      Session[] // ارتباط با سشن‌های NextAuth
+  accounts      Account[] 
+  sessions      Session[] 
   savedProducts Product[] @relation("UserWishlist")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
 
-// جداول استاندارد NextAuth برای مدیریت سشن‌ها و شبکه‌های اجتماعی
 model Account {
   id                 String  @id @default(cuid())
   userId             String
@@ -83,11 +82,11 @@ model OTP {
 
 model Address {
   id          String   @id @default(cuid())
-  title       String   // عنوان آدرس (مثلاً: خانه، محل کار)
-  state       String   // استان (الزامی)
-  city        String   // شهر (الزامی)
-  fullAddress String   // آدرس کامل پستی
-  postalCode  String   // کد پستی (الزامی شد)
+  title       String   
+  state       String   
+  city        String   
+  fullAddress String   
+  postalCode  String   
   
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -111,15 +110,14 @@ model Category {
   products  Product[]
 }
 
-// مدل جدید برای برندها
 model Brand {
   id          String    @id @default(cuid())
-  name        String    // نام برند (مثل: تراست اسلیم)
-  slug        String    @unique // برای استفاده در URL (مثل: trust-slim)
-  logo        String?   // لوگوی برند (اختیاری)
-  description String?   // توضیحات برند (اختیاری)
+  name        String    
+  slug        String    @unique 
+  logo        String?   
+  description String?   
   
-  products    Product[] // ارتباط با محصولات
+  products    Product[] 
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -134,8 +132,8 @@ model Product {
   description     String      @db.Text      
   richDescription String?     @db.Text 
 
-  brandId     String?   // 👈 شناسه برند (اختیاری است چون ? دارد)
-  brand       Brand?    @relation(fields: [brandId], references: [id])
+  brandId         String?   
+  brand           Brand?    @relation(fields: [brandId], references: [id])
 
   referenceUrl    String?
   
@@ -202,7 +200,7 @@ model Tag {
 }
 
 // ==========================================
-// Order & Payment Models (Updated)
+// Order & Payment Models
 // ==========================================
 
 model Order {
@@ -210,15 +208,13 @@ model Order {
   userId          String
   user            User        @relation(fields: [userId], references: [id])
   
-  totalAmount     Int         // مبلغ کل پرداختی
+  totalAmount     Int         
   shippingCost    Int         @default(0)
   status          OrderStatus @default(PENDING)
   
-  // اطلاعات درگاه پرداخت (زرین‌پال)
-  authority       String?     @unique // کد یکتای زرین‌پال قبل از پرداخت
-  refId           String?     // شماره پیگیری بعد از پرداخت موفق
+  authority       String?     @unique 
+  refId           String?     
   
-  // اطلاعات خریدار و ارسال (ثبت ثابت در زمان خرید)
   customerName    String?
   customerPhone   String?
   shippingState   String?
@@ -233,31 +229,26 @@ model Order {
 }
 
 model OrderItem {
-  id        String  @id @default(cuid())
+  id        String   @id @default(cuid())
   
   orderId   String
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
+  // 🌟 تغییر کلیدی اینجاست: شناسه محصول را اختیاری کردیم تا بتوانیم از SetNull استفاده کنیم
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
   
   quantity  Int
-  price     Int     // قیمت محصول دقیقاً در لحظه خرید
+  price     Int     
 }
 
 // ==========================================
-// Settings Model (برای تنظیماتی مثل هزینه پست)
-// ==========================================
-// ==========================================
-// Settings Model (برای تنظیماتی مثل هزینه پست)
+// Settings Model 
 // ==========================================
 model StoreSettings {
   id               String    @id @default("global")
   shippingCost     Int       @default(50000)
-
-  // 👇 این خط مهم در فایل شما جا افتاده بود
   campaignIsActive Boolean   @default(false) 
-
   campaignTitle    String?   
   campaignEndDate  DateTime? 
   campaignLink     String?   
