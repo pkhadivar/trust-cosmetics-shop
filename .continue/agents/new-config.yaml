@@ -27,9 +27,9 @@ models:
     keepAlive: 3600
 
   # Cold path — chat, review, doc generation, applying edits
-  - name: Qwen3-Coder 30B (Chat/Edit/Apply)
+  - name: Qwen3.6 27B (Chat/Edit/Apply)
     provider: ollama
-    model: qwen3-coder:30b
+    model: qwen3.6:27b
     apiBase: http://localhost:11434
     roles:
       - chat

@@ -107,15 +107,23 @@ export async function HeroSection() {
                 </div>
               )}
 
-              <div className="absolute inset-0 bg-[#050810] rounded-3xl shadow-2xl overflow-hidden opacity-90 group-hover/hero-img:opacity-100 transition-all duration-500">
+              <div className="absolute inset-0 bg-[#050810] rounded-3xl shadow-2xl overflow-hidden opacity-90 group-hover/hero-img:opacity-100 transition-all duration-500 flex items-center justify-center p-6 sm:p-10">
+                
+                {/* هاله نور ملایم */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] bg-gold/10 rounded-full blur-[60px] pointer-events-none z-0" />
+                
+                {/* رندر استاندارد عکس باکیفیت */}
                 <Image
-                  src={displayProduct.imageUrl}
+                  src={displayProduct.imageUrl} // 👈 آدرس عکس باکیفیت جدید
                   alt={displayProduct.title}
                   fill
-                  className="object-cover object-center"
+                  className="object-contain object-center drop-shadow-[0_20px_30px_rgba(0,0,0,0.8)] z-10 transition-transform duration-700 group-hover/hero-img:scale-105"
+                  quality={100}
+                  unoptimized={true}
                   priority
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent z-20 pointer-events-none" />
               </div>
 
               {/* باکس شناور قیمت و عنوان */}

@@ -133,13 +133,17 @@ export function ProductCard({ product }: { product: CartProduct & { tags?: strin
       <Link 
         href={`/products/${product.id}`} 
         className={`relative block aspect-square overflow-hidden bg-secondary/40 ${isOutOfStock ? "cursor-default" : ""}`}
-        onClick={(e) => isOutOfStock && e.preventDefault()} // جلوگیری از ورود به صفحه سینگل در صورت ناموجود بودن (اختیاری)
+        onClick={(e) => isOutOfStock && e.preventDefault()}
       >
         <Image
           src={displayImage}
           alt={product.title}
           fill
-          className={`object-contain p-6 transition-transform duration-500 ${isOutOfStock ? "opacity-60" : "group-hover:scale-110"}`}
+          // 🌟 اضافه شدن drop-shadow برای ایجاد عمق و حالت سه‌بعدی
+          className={`object-contain p-5 drop-shadow-[0_15px_15px_rgba(0,0,0,0.6)] transition-transform duration-500 ${isOutOfStock ? "opacity-60" : "group-hover:scale-110 group-hover:drop-shadow-[0_20px_20px_rgba(212,175,55,0.15)]"}`}
+          // 🌟 حفظ بالاترین کیفیت عکس در لیست محصولات
+          quality={100}
+          unoptimized={true}
         />
       </Link>
 
