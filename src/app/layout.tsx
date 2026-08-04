@@ -6,6 +6,7 @@ import { SiteNavbar } from "@/components/site-navbar";
 import { SiteFooter } from "@/components/site-footer"; 
 import { getStoreSettings } from "@/actions/settings"; 
 import { CampaignBanner } from "@/components/campaign-banner"; 
+import { PwaInstallBanner } from "@/components/pwa-install-banner";
 import "./globals.css";
 
 const vazirmatn = Vazirmatn({
@@ -14,7 +15,20 @@ const vazirmatn = Vazirmatn({
   display: "swap",
 });
 
-// ... Your metadata code remains here ...
+// 🌟 ۱. تنظیم رنگ مرورگر و پس‌زمینه اپلیکیشن (رنگ سرمه‌ای قالب شما)
+export const viewport: Viewport = {
+  themeColor: "#0a0f1c",
+};
+
+// 🌟 ۲. معرفی متادیتا، فایل مانیفست و آیکون مخصوص اپل
+export const metadata: Metadata = {
+  title: "TRUST | تراست بیوتی استور", // اگر تایتل قبلی چیز دیگری بود آن را جایگزین کنید
+  description: "خرید سریع و مطمئن محصولات آرایشی و بهداشتی تراست",
+  manifest: "/manifest.json",
+  icons: {
+    apple: "/icon-192x192.png", 
+  },
+};
 
 export default async function RootLayout({
   children,
@@ -52,7 +66,7 @@ export default async function RootLayout({
             </main>
             
             <SiteFooter />
-            
+            <PwaInstallBanner />
           </Providers>
         </NextAuthProvider>
       </body>
