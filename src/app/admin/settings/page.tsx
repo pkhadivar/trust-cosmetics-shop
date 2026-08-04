@@ -15,9 +15,15 @@ export default function AdminSettingsPage() {
   // استیت‌های کمپین (بنر تخفیف)
   const [campaignIsActive, setCampaignIsActive] = useState(false);
   const [campaignTitle, setCampaignTitle] = useState("");
-  // فیلد لینک از اینجا حذف شد
+  const [campaignStartDate, setCampaignStartDate] = useState(""); // استیت جدید
   const [campaignEndDate, setCampaignEndDate] = useState(""); 
   const [isPendingCampaign, startTransitionCampaign] = useTransition();
+
+  // تابع کمکی برای تبدیل تاریخ UTC دیتابیس به زمان محلی برای input
+  const formatForInput = (dateString: string | Date) => {
+    const date = new Date(dateString);
+    return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  };
 
   useEffect(() => {
     getStoreSettings()
@@ -26,10 +32,12 @@ export default function AdminSettingsPage() {
         setCampaignIsActive(settings.campaignIsActive || false);
         setCampaignTitle(settings.campaignTitle || "");
         
+        if (settings.campaignStartDate) {
+          setCampaignStartDate(formatForInput(settings.campaignStartDate));
+        }
+        
         if (settings.campaignEndDate) {
-          const date = new Date(settings.campaignEndDate);
-          const formattedDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-          setCampaignEndDate(formattedDate);
+          setCampaignEndDate(formatForInput(settings.campaignEndDate));
         }
       })
       .finally(() => setIsLoading(false));
@@ -53,15 +61,20 @@ export default function AdminSettingsPage() {
     if (campaignIsActive && !campaignTitle) {
       return toast.error("برای فعال‌سازی کمپین، وارد کردن عنوان الزامی است.");
     }
-    if (campaignIsActive && !campaignEndDate) {
-      return toast.error("لطفاً زمان پایان کمپین را مشخص کنید.");
+    if (campaignIsActive && (!campaignStartDate || !campaignEndDate)) {
+      return toast.error("لطفاً زمان شروع و پایان کمپین را مشخص کنید.");
+    }
+
+    // چک کردن اینکه تاریخ پایان بعد از تاریخ شروع باشد
+    if (campaignIsActive && new Date(campaignStartDate) >= new Date(campaignEndDate)) {
+      return toast.error("زمان پایان باید بعد از زمان شروع باشد.");
     }
 
     startTransitionCampaign(async () => {
-      // فقط فیلدهای مورد نیاز ادمین را می‌فرستیم
       const result = await updateCampaignSettingsAction({
         campaignIsActive,
         campaignTitle: campaignTitle || null,
+        campaignStartDate: campaignStartDate ? new Date(campaignStartDate) : null, // ارسال تاریخ شروع
         campaignEndDate: campaignEndDate ? new Date(campaignEndDate) : null,
       });
 
@@ -89,6 +102,7 @@ export default function AdminSettingsPage() {
 
       {/* بخش تنظیمات هزینه ارسال */}
       <div className="bg-card border border-border rounded-3xl p-6 shadow-sm">
+        {/* ... (کد قبلی بدون تغییر) ... */}
         <div className="flex items-center gap-3 mb-6 border-b border-border/50 pb-4">
           <Truck className="size-5 text-muted-foreground" />
           <h2 className="text-xl font-bold">هزینه ارسال (پست)</h2>
@@ -122,12 +136,12 @@ export default function AdminSettingsPage() {
           <label className="relative inline-flex items-center cursor-pointer">
             <input type="checkbox" className="sr-only peer" checked={campaignIsActive} onChange={(e) => setCampaignIsActive(e.target.checked)} />
             <div className="w-11 h-6 bg-secondary rounded-full peer peer-checked:after:-translate-x-full after:content-[''] after:absolute after:top-0.5 after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gold"></div>
-            <span className="mr-3 text-sm font-medium text-foreground">{campaignIsActive ? "فعال" : "غیرفعال"}</span>
+            <span className="mr-3 text-sm font-medium text-foreground">{campaignIsActive ? "آماده‌سازی" : "غیرفعال"}</span>
           </label>
         </div>
         
         <form onSubmit={handleSaveCampaign} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
+          <div className="space-y-2 md:col-span-2">
             <label className="text-sm font-semibold text-foreground">عنوان جشنواره</label>
             <input 
               type="text" 
@@ -135,6 +149,18 @@ export default function AdminSettingsPage() {
               onChange={(e) => setCampaignTitle(e.target.value)}
               placeholder="مثال: تخفیف‌های شگفت‌انگیز تابستانه!"
               className="w-full p-3 border border-border rounded-xl bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-gold transition-all"
+              disabled={!campaignIsActive}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-foreground">تاریخ و ساعت شروع جشنواره</label>
+            <input 
+              type="datetime-local" 
+              value={campaignStartDate}
+              onChange={(e) => setCampaignStartDate(e.target.value)}
+              className="w-full p-3 border border-border rounded-xl bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-gold transition-all text-left"
+              dir="ltr"
               disabled={!campaignIsActive}
             />
           </div>
@@ -150,8 +176,6 @@ export default function AdminSettingsPage() {
               disabled={!campaignIsActive}
             />
           </div>
-
-          {/* فیلد لینک حذف شد */}
 
           <div className="md:col-span-2 flex justify-end mt-2">
             <button type="submit" disabled={isPendingCampaign} className="px-8 h-12 bg-gold text-[#0a0f1c] hover:bg-yellow-500 rounded-xl font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50">

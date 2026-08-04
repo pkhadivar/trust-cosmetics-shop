@@ -15,6 +15,7 @@ async function checkAdminAccess() {
 const campaignSchema = z.object({
   campaignIsActive: z.boolean(),
   campaignTitle: z.string().nullable(),
+  campaignStartDate: z.date().nullable(), // اضافه شد
   campaignEndDate: z.date().nullable()
 });
 
@@ -34,6 +35,7 @@ export async function getStoreSettings() {
       shippingCost: 50000,
       campaignIsActive: false,
       campaignTitle: null,
+      campaignStartDate: null, // اضافه شد
       campaignEndDate: null,
       campaignLink: null
     }; 
@@ -41,6 +43,7 @@ export async function getStoreSettings() {
 }
 
 export async function updateShippingCostAction(cost: number) {
+  // ... (بدون تغییر)
   const isAdmin = await checkAdminAccess();
   if (!isAdmin) return { success: false, error: "دسترسی غیرمجاز!" };
 
@@ -63,6 +66,7 @@ export async function updateShippingCostAction(cost: number) {
 export async function updateCampaignSettingsAction(data: {
   campaignIsActive: boolean;
   campaignTitle: string | null;
+  campaignStartDate: Date | null; // اضافه شد
   campaignEndDate: Date | null;
 }) {
   const isAdmin = await checkAdminAccess();
