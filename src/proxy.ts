@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
-export async function middleware(request: NextRequest) {
+// 🌟 تابع را به عنوان دیفالت اکسپورت کردیم
+export default async function proxy(request: NextRequest) {
   // خواندن امن توکن و اطلاعات درون آن (از جمله نقش کاربر)
   const token = await getToken({ 
     req: request, 
