@@ -4,8 +4,8 @@ import { Providers } from "@/components/providers";
 import { NextAuthProvider } from "@/components/NextAuthProvider";
 import { SiteNavbar } from "@/components/site-navbar"; 
 import { SiteFooter } from "@/components/site-footer"; 
-import { getStoreSettings } from "@/actions/settings"; // 👈 اضافه شد
-import { CampaignBanner } from "@/components/campaign-banner"; // 👈 اضافه شد
+import { getStoreSettings } from "@/actions/settings"; 
+import { CampaignBanner } from "@/components/campaign-banner"; 
 import "./globals.css";
 
 const vazirmatn = Vazirmatn({
@@ -14,39 +14,34 @@ const vazirmatn = Vazirmatn({
   display: "swap",
 });
 
-// ... کدهای متادیتا شما در اینجا ...
+// ... Your metadata code remains here ...
 
-// 👈 کلمه async را برای دریافت اطلاعات از سرور اضافه کردیم
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   
-  // 👈 دریافت تنظیمات بنر از دیتابیس در بالاترین لایه سایت
+  // Get settings from database
   const settings: any = await getStoreSettings();
   
-  // 👈 بررسی می‌کنیم که آیا بنر فعال است و زمان آن هنوز به پایان نرسیده است؟
-// 👈 این بخش را با کد زیر جایگزین کنید تا تایپ‌اسکریپت راضی شود
-  const isCampaignValid = 
-    settings?.campaignIsActive && 
-    settings?.campaignTitle && 
-    settings?.campaignEndDate && 
-    new Date(settings.campaignEndDate).getTime() > new Date().getTime();
-
   return (
     <html lang="fa" dir="rtl" className={`${vazirmatn.variable} bg-background`}>
       <body className="font-sans antialiased flex flex-col min-h-screen">
         <NextAuthProvider>
           <Providers>
-            {/* کامپوننت توستر برای نمایش پیام‌ها */}
             
-            {/* 👈 نمایش بنر تایمردار دقیقاً بالای هدر سایت */}
-            {isCampaignValid && (
+            {/* If the admin toggled it to active, render it. 
+                The component itself will decide if the time is right to be visible */}
+            {settings?.campaignIsActive && 
+             settings?.campaignTitle && 
+             settings?.campaignStartDate && 
+             settings?.campaignEndDate && (
               <CampaignBanner 
-                title={settings.campaignTitle!} 
-                endDate={settings.campaignEndDate!} 
-                link={settings.campaignLink!} 
+                title={settings.campaignTitle} 
+                startDate={settings.campaignStartDate} // Pass start date
+                endDate={settings.campaignEndDate}     // Pass end date
+                link={settings.campaignLink || "/shop?discount=true"} 
               />
             )}
             
@@ -57,6 +52,7 @@ export default async function RootLayout({
             </main>
             
             <SiteFooter />
+            
           </Providers>
         </NextAuthProvider>
       </body>

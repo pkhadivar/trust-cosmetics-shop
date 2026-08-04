@@ -249,7 +249,8 @@ model StoreSettings {
   id               String    @id @default("global")
   shippingCost     Int       @default(50000)
   campaignIsActive Boolean   @default(false) 
-  campaignTitle    String?   
+  campaignTitle    String? 
+  campaignStartDate DateTime?  
   campaignEndDate  DateTime? 
   campaignLink     String?   
   
