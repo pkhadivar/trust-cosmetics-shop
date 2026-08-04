@@ -1,40 +1,56 @@
 import { prisma } from "@/lib/prisma";
-import { Package, ShoppingBag, DollarSign, Users } from "lucide-react";
+import { 
+  Package, 
+  ShoppingBag, 
+  DollarSign, 
+  Users, 
+  AlertTriangle,
+  CalendarClock
+} from "lucide-react";
 
 export default async function AdminDashboardPage() {
-  // ۱. کل محصولات (تمام محصولاتی که در دیتابیس ثبت شده‌اند)
+  // ۱. کل محصولات
   const totalProducts = await prisma.product.count();
 
-  // ۲. 🌟 سفارشات نیازمند بررسی (تغییر از PENDING به PAID)
-  // این آمار به ادمین نشان می‌دهد چند سفارش پرداخت شده و منتظر خرید از سایت مرجع هستند
+  // 🌟 محصولات ناموجود یا غیرفعال (بر اساس isAvailable و stock)
+  const unavailableProductsCount = await prisma.product.count({
+    where: {
+      OR: [
+        { stock: 0 },
+        { isAvailable: false }
+      ]
+    }
+  });
+
+  // ۲. سفارشات نیازمند بررسی (تغییر از PENDING به PAID)
   const actionRequiredOrdersCount = await prisma.order.count({
     where: { status: 'PAID' }
   });
 
-  // ۳. محاسبه درآمد ماه جاری (فقط سفارشات پرداخت شده یا ارسال شده در این ماه)
-  const now = new Date();
-  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1); // روز اول ماه جاری
-
-  const currentMonthOrders = await prisma.order.aggregate({
-    _sum: {
-      totalAmount: true
-    },
-    where: {
-      createdAt: {
-        gte: firstDayOfMonth // تاریخ ثبت سفارش بزرگتر یا مساوی روز اول ماه باشد
-      },
-      status: {
-        in: ['PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED'] // فقط سفارشات موفق
-      }
+  // ۳. تعداد سفارشات ثبت شده در امروز
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0); 
+  const todaysOrdersCount = await prisma.order.count({
+    where: { 
+      createdAt: { gte: startOfToday } 
     }
   });
-  
+
+  // ۴. محاسبه درآمد ماه جاری
+  const now = new Date();
+  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const currentMonthOrders = await prisma.order.aggregate({
+    _sum: { totalAmount: true },
+    where: {
+      createdAt: { gte: firstDayOfMonth },
+      status: { in: ['PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED'] } 
+    }
+  });
   const currentMonthRevenue = currentMonthOrders._sum.totalAmount || 0;
 
-  // ۴. گزارش اضافه: تعداد کل مشتریان (کاربران با نقش USER)
-  const totalUsers = await prisma.user.count({
-    where: { role: 'USER' }
-  });
+  // ۵. تعداد کل کاربران سایت (بدون فیلتر Role)
+  const totalUsers = await prisma.user.count();
 
   return (
     <div className="p-6 md:p-10">
@@ -42,29 +58,11 @@ export default async function AdminDashboardPage() {
         خلاصه وضعیت فروشگاه
       </h1>
 
-      {/* گرید کارت‌های آماری */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6" dir="rtl">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" dir="rtl">
         
-        {/* کارت 1: کل محصولات */}
-        <div className="flex flex-col justify-between rounded-2xl border border-border bg-card/50 p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-medium text-muted-foreground">کل محصولات</span>
-            <div className="p-2 bg-secondary/50 rounded-lg">
-              <Package className="size-5 text-gold" />
-            </div>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-gold">
-              {totalProducts.toLocaleString("fa-IR")}
-            </span>
-          </div>
-        </div>
-
-        {/* کارت 2: سفارشات نیازمند بررسی 🌟 */}
+        {/* کارت 1: سفارشات نیازمند بررسی */}
         <div className="flex flex-col justify-between rounded-2xl border border-gold/30 bg-gold/5 p-6 shadow-sm relative overflow-hidden">
-          {/* یک نوار طلایی کوچک برای جلب توجه ادمین */}
-          <div className="absolute top-0 right-0 w-1 h-full bg-gold"></div>
-          
+          <div className="absolute top-0 right-0 w-1.5 h-full bg-gold"></div>
           <div className="flex items-center justify-between mb-4">
             <span className="text-sm font-bold text-foreground">نیازمند بررسی (پرداخت شده)</span>
             <div className="p-2 bg-gold/20 rounded-lg">
@@ -83,10 +81,31 @@ export default async function AdminDashboardPage() {
           </div>
         </div>
 
+        {/* کارت 2: محصولات ناموجود یا غیرفعال */}
+        <div className="flex flex-col justify-between rounded-2xl border border-red-500/30 bg-red-500/5 p-6 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-1.5 h-full bg-red-500"></div>
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-sm font-bold text-foreground">محصولات غیرفعال یا موجودی صفر</span>
+            <div className="p-2 bg-red-500/20 rounded-lg">
+              <AlertTriangle className="size-5 text-red-500" />
+            </div>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-red-500">
+              {unavailableProductsCount.toLocaleString("fa-IR")}
+            </span>
+            {unavailableProductsCount > 0 && (
+              <span className="text-xs text-muted-foreground font-medium">
+                نیاز به بررسی
+              </span>
+            )}
+          </div>
+        </div>
+
         {/* کارت 3: درآمد ماه جاری */}
         <div className="flex flex-col justify-between rounded-2xl border border-border bg-card/50 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-medium text-muted-foreground">درآمد ماه جاری</span>
+            <span className="text-sm font-medium text-muted-foreground">درآمد کل ماه جاری</span>
             <div className="p-2 bg-secondary/50 rounded-lg">
               <DollarSign className="size-5 text-gold" />
             </div>
@@ -99,18 +118,51 @@ export default async function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* کارت 4: کل مشتریان */}
+        {/* کارت 4: سفارشات امروز */}
         <div className="flex flex-col justify-between rounded-2xl border border-border bg-card/50 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-medium text-muted-foreground">کل مشتریان ثبت‌نامی</span>
+            <span className="text-sm font-medium text-muted-foreground">سفارشات ثبت شده امروز</span>
+            <div className="p-2 bg-secondary/50 rounded-lg">
+              <CalendarClock className="size-5 text-gold" />
+            </div>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-foreground">
+              {todaysOrdersCount.toLocaleString("fa-IR")}
+            </span>
+            <span className="text-sm text-muted-foreground">سفارش</span>
+          </div>
+        </div>
+
+        {/* کارت 5: کل محصولات */}
+        <div className="flex flex-col justify-between rounded-2xl border border-border bg-card/50 p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-sm font-medium text-muted-foreground">تنوع کل محصولات</span>
+            <div className="p-2 bg-secondary/50 rounded-lg">
+              <Package className="size-5 text-gold" />
+            </div>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-foreground">
+              {totalProducts.toLocaleString("fa-IR")}
+            </span>
+            <span className="text-sm text-muted-foreground">کالا</span>
+          </div>
+        </div>
+
+        {/* کارت 6: کل کاربران */}
+        <div className="flex flex-col justify-between rounded-2xl border border-border bg-card/50 p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-sm font-medium text-muted-foreground">کل کاربران سایت</span>
             <div className="p-2 bg-secondary/50 rounded-lg">
               <Users className="size-5 text-gold" />
             </div>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-gold">
+            <span className="text-3xl font-bold text-foreground">
               {totalUsers.toLocaleString("fa-IR")}
             </span>
+            <span className="text-sm text-muted-foreground">نفر</span>
           </div>
         </div>
 
