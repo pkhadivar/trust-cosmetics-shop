@@ -3,52 +3,91 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Plus, Heart, Loader2, Ban } from "lucide-react";
-import { useDispatch } from "react-redux";
+import { Plus, Heart, Loader2, Ban, Minus, Trash2 } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 
-import { addToCart, type CartProduct } from "@/store/cartSlice";
+// 🌟 استفاده از اکشن‌های موجود در فایل ریداکس شما
+import {
+  addToCart,
+  updateQuantity,
+  removeFromCart,
+  type CartProduct,
+} from "@/store/cartSlice";
 import { toggleWishlistItem } from "@/store/wishlistSlice";
-import { calculateDiscount } from "@/utils/math"; 
+import { calculateDiscount } from "@/utils/math";
 import { toggleWishlistAction } from "@/actions/wishlist";
 
-// 🌟 اضافه شدن isSaved به تایپ محصول
-export function ProductCard({ product }: { product: CartProduct & { tags?: string[], isAvailable?: boolean, isSaved?: boolean } }) {
+export function ProductCard({
+  product,
+}: {
+  product: CartProduct & {
+    tags?: string[];
+    isAvailable?: boolean;
+    isSaved?: boolean;
+  };
+}) {
   const dispatch = useDispatch();
   const { data: session } = useSession();
-  
-  // 🌟 استفاده از استیت لوکال با مقدار اولیه سرور برای جلوگیری از خالی بودن قلب در لود اولیه
+
   const [isSaved, setIsSaved] = useState(product.isSaved || false);
   const [isPending, setIsPending] = useState(false);
 
   // بررسی وضعیت موجودی
   const isOutOfStock = product.isAvailable === false;
 
-  const discountPercent = product.discountedPrice 
-    ? calculateDiscount(product.price, product.discountedPrice) 
+  // خواندن سبد خرید از استور ریداکس
+  const cartItems = useSelector((state: any) => state.cart.items);
+  const cartItem = cartItems.find(
+    (item: any) => item.product.id === product.id,
+  );
+  const quantity = cartItem ? cartItem.quantity : 0;
+
+  const discountPercent = product.discountedPrice
+    ? calculateDiscount(product.price, product.discountedPrice)
     : 0;
 
-  function handleAddToCart() {
-      // اگر ناموجود بود اصلا اجازه اضافه شدن ندهد
-      if (isOutOfStock) return;
+  // 🌟 تابع افزودن اولیه به سبد خرید
+  function handleAddToCart(e: React.MouseEvent) {
+    e.preventDefault();
+    if (isOutOfStock) return;
 
-      const cleanProduct = {
-        id: product.id,
-        title: product.title,
-        subtitle: product.subtitle,
-        price: product.price,
-        discountedPrice: product.discountedPrice,
-        images: product.images,
-        badge: product.badge, 
-      };
-      dispatch(addToCart({ product: cleanProduct, quantity: 1 }));
-      toast.success("به سبد خرید اضافه شد!");
+    const cleanProduct = {
+      id: product.id,
+      title: product.title,
+      subtitle: product.subtitle,
+      price: product.price,
+      discountedPrice: product.discountedPrice,
+      images: product.images,
+      badge: product.badge,
+    };
+    dispatch(addToCart({ product: cleanProduct, quantity: 1 }));
+    toast.success("به سبد خرید اضافه شد!");
+  }
+
+  // 🌟 تابع افزایش تعداد محصول موجود
+  function handleIncrement(e: React.MouseEvent) {
+    e.preventDefault();
+    dispatch(updateQuantity({ productId: product.id, quantity: quantity + 1 }));
+  }
+
+  // 🌟 تابع کاهش یا حذف کامل با استفاده از اکشن‌های موجود
+  function handleDecreaseOrRemove(e: React.MouseEvent) {
+    e.preventDefault();
+    if (quantity === 1) {
+      dispatch(removeFromCart(product.id));
+      toast.success("از سبد خرید حذف شد");
+    } else {
+      dispatch(
+        updateQuantity({ productId: product.id, quantity: quantity - 1 }),
+      );
+    }
   }
 
   const handleToggleSave = async (e: React.MouseEvent) => {
-    e.preventDefault(); 
-    
+    e.preventDefault();
+
     const userId = (session?.user as any)?.id;
     if (!userId) {
       toast.error("برای ذخیره محصول ابتدا وارد حساب کاربری شوید.");
@@ -57,17 +96,19 @@ export function ProductCard({ product }: { product: CartProduct & { tags?: strin
 
     setIsPending(true);
     const newSavedState = !isSaved;
-    
-    // 🌟 آپدیت آنی رابط کاربری و ارسال به ریداکس
+
     setIsSaved(newSavedState);
     dispatch(toggleWishlistItem(product.id));
 
     const result = await toggleWishlistAction(product.id, userId);
-    
+
     if (result.success) {
-      toast.success(newSavedState ? "به لیست علاقه‌مندی‌ها اضافه شد" : "از لیست علاقه‌مندی‌ها حذف شد");
+      toast.success(
+        newSavedState
+          ? "به لیست علاقه‌مندی‌ها اضافه شد"
+          : "از لیست علاقه‌مندی‌ها حذف شد",
+      );
     } else {
-      // بازگردانی در صورت خطای سرور
       setIsSaved(!newSavedState);
       dispatch(toggleWishlistItem(product.id));
       toast.error(result.error || "خطایی رخ داد");
@@ -78,13 +119,16 @@ export function ProductCard({ product }: { product: CartProduct & { tags?: strin
   const displayImage = product.images?.[0] || "/placeholder.jpg";
 
   return (
-    <div className={`group relative flex flex-col overflow-hidden rounded-3xl border border-border bg-card transition-all duration-300 ${
-      isOutOfStock ? "opacity-75 grayscale-[0.5]" : "hover:border-gold/50 hover:shadow-[0_0_50px_-15px_rgba(212,175,55,0.45)]"
-    }`}>
-      
+    <div
+      className={`group relative flex flex-col overflow-hidden rounded-3xl border border-border bg-card transition-all duration-300 ${
+        isOutOfStock
+          ? "opacity-75 grayscale-[0.5]"
+          : "hover:border-gold/50 hover:shadow-[0_0_50px_-15px_rgba(212,175,55,0.45)]"
+      }`}
+    >
       {/* دکمه قلب */}
       <div className="absolute start-4 top-4 z-20">
-        <button 
+        <button
           onClick={handleToggleSave}
           disabled={isPending}
           className="flex size-8 items-center justify-center rounded-full bg-background/60 backdrop-blur-md border border-border/50 shadow-sm transition-all hover:bg-background hover:scale-110 disabled:opacity-50"
@@ -93,20 +137,20 @@ export function ProductCard({ product }: { product: CartProduct & { tags?: strin
           {isPending ? (
             <Loader2 className="size-4 animate-spin text-muted-foreground" />
           ) : (
-            <Heart className={`size-4 transition-colors ${isSaved ? "fill-red-500 text-red-500" : "text-muted-foreground hover:text-red-500"}`} />
+            <Heart
+              className={`size-4 transition-colors ${isSaved ? "fill-red-500 text-red-500" : "text-muted-foreground hover:text-red-500"}`}
+            />
           )}
         </button>
       </div>
 
       {/* بخش نمایش برچسب‌ها */}
       <div className="pointer-events-none absolute end-4 top-4 z-10 flex flex-wrap justify-end gap-1.5 max-w-[75%]">
-        
-        {/* بج ناموجود با رنگ خاکستری */}
         {isOutOfStock ? (
-           <span className="flex items-center gap-1 rounded-full bg-secondary px-3 py-1 text-xs font-bold text-muted-foreground shadow-sm border border-border/50 backdrop-blur-md">
-             <Ban className="size-3" />
-             ناموجود
-           </span>
+          <span className="flex items-center gap-1 rounded-full bg-secondary px-3 py-1 text-xs font-bold text-muted-foreground shadow-sm border border-border/50 backdrop-blur-md">
+            <Ban className="size-3" />
+            ناموجود
+          </span>
         ) : (
           <>
             {discountPercent > 0 && (
@@ -114,10 +158,13 @@ export function ProductCard({ product }: { product: CartProduct & { tags?: strin
                 {discountPercent}% تخفیف
               </span>
             )}
-            
+
             {product.tags && product.tags.length > 0 ? (
               product.tags.map((tag) => (
-                <span key={tag} className="rounded-full bg-gold px-3 py-1 text-xs font-semibold text-primary-foreground shadow-sm whitespace-nowrap">
+                <span
+                  key={tag}
+                  className="rounded-full bg-gold px-3 py-1 text-xs font-semibold text-primary-foreground shadow-sm whitespace-nowrap"
+                >
                   {tag}
                 </span>
               ))
@@ -130,8 +177,8 @@ export function ProductCard({ product }: { product: CartProduct & { tags?: strin
         )}
       </div>
 
-      <Link 
-        href={`/products/${product.id}`} 
+      <Link
+        href={`/products/${product.id}`}
         className={`relative block aspect-square overflow-hidden bg-secondary/40 ${isOutOfStock ? "cursor-default" : ""}`}
         onClick={(e) => isOutOfStock && e.preventDefault()}
       >
@@ -139,23 +186,23 @@ export function ProductCard({ product }: { product: CartProduct & { tags?: strin
           src={displayImage}
           alt={product.title}
           fill
-          // 🌟 اضافه شدن drop-shadow برای ایجاد عمق و حالت سه‌بعدی
           className={`object-contain p-5 drop-shadow-[0_15px_15px_rgba(0,0,0,0.6)] transition-transform duration-500 ${isOutOfStock ? "opacity-60" : "group-hover:scale-110 group-hover:drop-shadow-[0_20px_20px_rgba(212,175,55,0.15)]"}`}
-          // 🌟 حفظ بالاترین کیفیت عکس در لیست محصولات
           quality={100}
           unoptimized={true}
         />
       </Link>
 
       <div className="flex flex-1 flex-col p-5">
-        <Link 
-          href={`/products/${product.id}`} 
+        <Link
+          href={`/products/${product.id}`}
           className={`inline-block w-fit transition-colors ${isOutOfStock ? "text-muted-foreground cursor-default" : "hover:text-gold"}`}
           onClick={(e) => isOutOfStock && e.preventDefault()}
         >
-          <h3 className="text-base font-semibold line-clamp-1">{product.title}</h3>
+          <h3 className="text-base font-semibold line-clamp-1">
+            {product.title}
+          </h3>
         </Link>
-        
+
         <p className="mt-1 text-sm leading-relaxed text-muted-foreground min-h-[40px] line-clamp-2">
           {product.subtitle || ""}
         </p>
@@ -167,20 +214,30 @@ export function ProductCard({ product }: { product: CartProduct & { tags?: strin
                 {product.price.toLocaleString("fa-IR")}
               </span>
             )}
-            
-            <div className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 shadow-sm ${
-              isOutOfStock ? "border-border bg-secondary/30" : "border-gold/40 bg-gold/10"
-            }`}>
-              <span className={`text-[15px] font-bold ${isOutOfStock ? "text-muted-foreground" : "text-gold"}`}>
-                {(product.discountedPrice || product.price).toLocaleString("fa-IR")}
+
+            <div
+              className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 shadow-sm ${
+                isOutOfStock
+                  ? "border-border bg-secondary/30"
+                  : "border-gold/40 bg-gold/10"
+              }`}
+            >
+              <span
+                className={`text-[15px] font-bold ${isOutOfStock ? "text-muted-foreground" : "text-gold"}`}
+              >
+                {(product.discountedPrice || product.price).toLocaleString(
+                  "fa-IR",
+                )}
               </span>
-              <span className={`text-xs font-medium ${isOutOfStock ? "text-muted-foreground/60" : "text-gold/80"}`}>
+              <span
+                className={`text-xs font-medium ${isOutOfStock ? "text-muted-foreground/60" : "text-gold/80"}`}
+              >
                 تومان
               </span>
             </div>
           </div>
 
-          {/* دکمه افزودن / ناموجود */}
+          {/* 🌟 مدیریت رابط کاربری دکمه‌ها */}
           {isOutOfStock ? (
             <button
               disabled
@@ -188,11 +245,37 @@ export function ProductCard({ product }: { product: CartProduct & { tags?: strin
             >
               ناموجود
             </button>
+          ) : quantity > 0 ? (
+            <div className="relative z-10 mb-0.5 flex h-[34px] w-[90px] items-center justify-between rounded-xl border border-gold/40 bg-secondary/50 px-1 py-1 text-foreground shadow-sm">
+              <button
+                type="button"
+                onClick={handleIncrement}
+                className="flex size-7 items-center justify-center rounded-lg hover:bg-background hover:text-gold transition-colors"
+              >
+                <Plus className="size-3.5" />
+              </button>
+
+              <span className="text-sm font-bold w-4 text-center">
+                {quantity}
+              </span>
+
+              <button
+                type="button"
+                onClick={handleDecreaseOrRemove}
+                className="flex size-7 items-center justify-center rounded-lg hover:bg-background hover:text-red-500 transition-colors"
+              >
+                {quantity === 1 ? (
+                  <Trash2 className="size-3.5 text-red-500/80" />
+                ) : (
+                  <Minus className="size-3.5" />
+                )}
+              </button>
+            </div>
           ) : (
             <button
               type="button"
               onClick={handleAddToCart}
-              className="relative z-10 mb-0.5 flex items-center gap-1.5 rounded-xl bg-secondary px-3.5 py-2 text-xs font-bold text-foreground transition-all hover:bg-gold hover:text-[#0a0f1c] hover:shadow-md"
+              className="relative z-10 mb-0.5 flex h-[34px] items-center gap-1.5 rounded-xl bg-secondary px-3.5 text-xs font-bold text-foreground transition-all hover:bg-gold hover:text-[#0a0f1c] hover:shadow-md"
             >
               <Plus className="size-4" />
               افزودن
