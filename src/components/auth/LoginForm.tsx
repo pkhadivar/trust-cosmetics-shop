@@ -1,17 +1,17 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { signIn } from 'next-auth/react'; 
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
+import { Button } from "@/components/ui/button";
 
 export default function LoginForm() {
-  const [step, setStep] = useState<'phone' | 'otp'>('phone');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [otpCode, setOtpCode] = useState('');
+  const [step, setStep] = useState<"phone" | "otp">("phone");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [otpCode, setOtpCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // 🌟 وضعیت تایمر (بر حسب ثانیه - مثلا 120 ثانیه معادل 2 دقیقه)
   const [countdown, setCountdown] = useState(120);
 
@@ -20,7 +20,7 @@ export default function LoginForm() {
   // 🌟 هوک برای مدیریت شمارش معکوس تایمر
   useEffect(() => {
     let timer: NodeJS.Timeout;
-    if (step === 'otp' && countdown > 0) {
+    if (step === "otp" && countdown > 0) {
       timer = setInterval(() => {
         setCountdown((prev) => prev - 1);
       }, 1000);
@@ -32,26 +32,27 @@ export default function LoginForm() {
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
   const handleSendOTP = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/auth/send-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: phoneNumber }),
       });
 
+      // 🌟 تغییر مهم: خواندن متن خطای بک‌اند به جای نمایش خطای ثابت
       if (!response.ok) {
-        throw new Error('خطا در ارسال پیامک');
+        const errorData = await response.json();
+        throw new Error(errorData.error || "خطا در برقراری ارتباط با سرور");
       }
 
-      setStep('otp');
-      // 🌟 ریست کردن تایمر هر بار که کد با موفقیت ارسال می‌شود
-      setCountdown(120); 
+      setStep("otp");
+      setCountdown(120);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -63,39 +64,46 @@ export default function LoginForm() {
     setLoading(true);
     setError(null);
     try {
-      const res = await signIn('credentials', {
+      const res = await signIn("credentials", {
         phone: phoneNumber,
         code: otpCode,
-        redirect: false, 
+        redirect: false,
       });
 
       if (res?.error) {
         throw new Error(res.error);
       }
 
-      router.push('/profile');
-      router.refresh(); 
-
+      router.push("/profile");
+      router.refresh();
     } catch (err) {
       setError((err as Error).message);
-      setLoading(false); 
+      setLoading(false);
     }
   };
 
   return (
     <>
-      {step === 'phone' && (
+      {step === "phone" && (
         <form
           onSubmit={(e) => e.preventDefault()}
           className="flex flex-col w-full max-w-md p-8 space-y-6 bg-card rounded-2xl shadow-xl border border-border"
         >
           <div className="text-center space-y-2">
-            <h2 className="text-2xl font-bold text-foreground">ورود یا ثبت‌نام</h2>
-            <p className="text-sm text-muted-foreground">لطفاً شماره تماس خود را وارد کنید</p>
+            <h2 className="text-2xl font-bold text-foreground">
+              ورود یا ثبت‌نام
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              لطفاً شماره تماس خود را وارد کنید
+            </p>
           </div>
-          
-          {error && <p className="text-red-500 text-sm text-center bg-red-50/10 p-2 rounded">{error}</p>}
-          
+
+          {error && (
+            <p className="text-red-500 text-sm text-center bg-red-50/10 p-2 rounded">
+              {error}
+            </p>
+          )}
+
           <div className="relative">
             <input
               type="tel"
@@ -107,29 +115,35 @@ export default function LoginForm() {
               className="w-full p-4 border border-border rounded-xl bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-gold text-left tracking-widest"
             />
           </div>
-          
+
           <Button
             onClick={handleSendOTP}
             disabled={loading || phoneNumber.length !== 11}
             className="w-full p-6 text-lg bg-gold text-primary-foreground hover:bg-gold-soft rounded-xl transition-all"
           >
-            {loading ? 'در حال ارسال...' : 'ارسال کد تایید'}
+            {loading ? "در حال ارسال..." : "ارسال کد تایید"}
           </Button>
         </form>
       )}
 
-      {step === 'otp' && (
+      {step === "otp" && (
         <form
           onSubmit={(e) => e.preventDefault()}
           className="flex flex-col w-full max-w-md p-8 space-y-6 bg-card rounded-2xl shadow-xl border border-border"
         >
           <div className="text-center space-y-2">
             <h2 className="text-2xl font-bold text-foreground">تایید شماره</h2>
-            <p className="text-sm text-muted-foreground">کد پیامک شده به {phoneNumber} را وارد کنید</p>
+            <p className="text-sm text-muted-foreground">
+              کد پیامک شده به {phoneNumber} را وارد کنید
+            </p>
           </div>
-          
-          {error && <p className="text-red-500 text-sm text-center bg-red-50/10 p-2 rounded">{error}</p>}
-          
+
+          {error && (
+            <p className="text-red-500 text-sm text-center bg-red-50/10 p-2 rounded">
+              {error}
+            </p>
+          )}
+
           <div className="relative">
             <input
               type="text"
@@ -141,31 +155,34 @@ export default function LoginForm() {
               className="w-full p-4 text-center text-2xl tracking-[1em] border border-border rounded-xl bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-gold"
             />
           </div>
-          
+
           <Button
             onClick={handleVerifyOTP}
             disabled={loading || otpCode.length !== 5}
             className="w-full p-6 text-lg bg-gold text-primary-foreground hover:bg-gold-soft rounded-xl transition-all"
           >
-            {loading ? 'در حال بررسی...' : 'ورود به حساب'}
+            {loading ? "در حال بررسی..." : "ورود به حساب"}
           </Button>
-          
+
           {/* 🌟 بخش پایینی: ویرایش شماره و تایمر/ارسال مجدد */}
           <div className="flex items-center justify-between mt-4">
-            <button 
+            <button
               type="button"
-              onClick={() => setStep('phone')} 
+              onClick={() => setStep("phone")}
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               ویرایش شماره
             </button>
 
             {countdown > 0 ? (
-              <span className="text-sm text-muted-foreground font-medium" dir="ltr">
+              <span
+                className="text-sm text-muted-foreground font-medium"
+                dir="ltr"
+              >
                 {formatTime(countdown)}
               </span>
             ) : (
-              <button 
+              <button
                 type="button"
                 onClick={handleSendOTP}
                 disabled={loading}
