@@ -1,4 +1,12 @@
-import { Phone, MessageCircle, Clock, MapPin, Info, ShieldCheck, HeartHandshake } from "lucide-react";
+import {
+  Phone,
+  MessageCircle,
+  Clock,
+  MapPin,
+  Info,
+  ShieldCheck,
+  HeartHandshake,
+} from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import MapWrapper from "@/components/map-wrapper";
@@ -12,23 +20,26 @@ export default function ContactPage() {
   return (
     <div className="min-h-screen pb-20 pt-10">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
-        
         {/* هدر صفحه */}
         <div className="mb-12 text-center space-y-4 max-w-3xl mx-auto">
           <p className="text-muted-foreground font-medium mb-2">
-            هیچ سؤالی بی‌‌پاسخ نمی‌ماند! برای پرسش‌ها و درخواست‌های خود، در ساعات کاری با شماره‌های زیر تماس بگیرید.
+            هیچ سؤالی بی‌‌پاسخ نمی‌ماند! برای پرسش‌ها و درخواست‌های خود، در
+            ساعات کاری با شماره‌های زیر تماس بگیرید.
           </p>
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground">ارتباط با تراست</h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground">
+            ارتباط با تراست
+          </h1>
           <p className="text-muted-foreground leading-relaxed">
-            مجموعه تراست با افتخار ارائه‌دهنده باکیفیت‌ترین محصولات مراقبت از پوست، مو و عطریات است. هدف ما خلق یک تجربه خرید بی‌نقص برای شماست؛ به همین دلیل، در تمامی مراحل خرید برای ارائه مشاوره و پاسخگویی در کنار شما خواهیم بود.
+            مجموعه تراست با افتخار ارائه‌دهنده باکیفیت‌ترین محصولات مراقبت از
+            پوست، مو و عطریات است. هدف ما خلق یک تجربه خرید بی‌نقص برای شماست؛
+            به همین دلیل، در تمامی مراحل خرید برای ارائه مشاوره و پاسخگویی در
+            کنار شما خواهیم بود.
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-          
           {/* ستون اطلاعات تماس */}
           <div className="space-y-6">
-            
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* تلفن ثابت پشتیبانی */}
               <div className="bg-card border border-border p-6 rounded-3xl flex flex-col items-center text-center gap-3 transition-transform hover:-translate-y-1">
@@ -36,9 +47,15 @@ export default function ContactPage() {
                   <Phone className="size-6" />
                 </div>
                 <h3 className="font-bold text-foreground">تلفن پشتیبانی</h3>
-                <p className="text-sm text-muted-foreground">جهت مشاوره و پیگیری سفارشات</p>
-                <a href="tel:02158231000" className="text-lg font-bold text-gold mt-2 block" dir="ltr">
-                ۰۹۱۱۲۲۸۵۹۹۱
+                <p className="text-sm text-muted-foreground">
+                  جهت مشاوره و پیگیری سفارشات
+                </p>
+                <a
+                  href="tel:02158231000"
+                  className="text-lg font-bold text-gold mt-2 block"
+                  dir="ltr"
+                >
+                  ۰۹۳۰۱۰۸۸۸۷۸
                 </a>
               </div>
 
@@ -48,10 +65,18 @@ export default function ContactPage() {
                   <MessageCircle className="size-6" />
                 </div>
                 <h3 className="font-bold text-foreground">واتساپ</h3>
-                <p className="text-sm text-muted-foreground">پاسخگویی سریع به پیام‌های شما</p>
+                <p className="text-sm text-muted-foreground">
+                  پاسخگویی سریع به پیام‌های شما
+                </p>
                 {/* لینک مستقیم به واتساپ با wa.me */}
-                <a href="https://wa.me/989937789718" target="_blank" rel="noreferrer" className="text-lg font-bold text-green-500 mt-2 block" dir="ltr">
-                  ۰۹۱۱۲۲۸۵۹۹۱
+                <a
+                  href="https://wa.me/989937789718"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-lg font-bold text-green-500 mt-2 block"
+                  dir="ltr"
+                >
+                  ۰۹۳۰۱۰۸۸۸۷۸
                 </a>
               </div>
             </div>
@@ -80,10 +105,13 @@ export default function ContactPage() {
             <div className="bg-gold/10 border border-gold/30 p-5 rounded-2xl flex gap-3 text-gold-darker">
               <Info className="size-5 shrink-0 mt-0.5" />
               <div className="text-sm leading-relaxed font-medium">
-                <strong>توجه مهم:</strong> ثبت سفارشات منحصراً از طریق وب‌سایت انجام می‌پذیرد. مراجعه به دفتر تنها برای «تحویل حضوری» و پس از دریافت پیامکِ هماهنگی امکان‌پذیر است. لطفاً در نظر داشته باشید که در دفتر فروشگاه، امکان پرداخت نقدی یا استفاده از کارت‌خوان وجود ندارد.
+                <strong>توجه مهم:</strong> ثبت سفارشات منحصراً از طریق وب‌سایت
+                انجام می‌پذیرد. مراجعه به دفتر تنها برای «تحویل حضوری» و پس از
+                دریافت پیامکِ هماهنگی امکان‌پذیر است. لطفاً در نظر داشته باشید
+                که در دفتر فروشگاه، امکان پرداخت نقدی یا استفاده از کارت‌خوان
+                وجود ندارد.
               </div>
             </div>
-
           </div>
 
           {/* ستون آدرس و نقشه */}
@@ -93,9 +121,12 @@ export default function ContactPage() {
                 <MapPin className="size-6 text-gold" />
               </div>
               <div>
-                <h3 className="font-bold text-foreground mb-2">آدرس دفتر مرکزی</h3>
+                <h3 className="font-bold text-foreground mb-2">
+                  آدرس دفتر مرکزی
+                </h3>
                 <p className="text-sm text-muted-foreground leading-relaxed font-medium">
-                  خیابان شریعتی (جنوب به شمال)، نرسیده به پل صدر، بالاتر از پمپ بنزین، پلاک ۱۶۹۸، طبقه هفتم
+                  خیابان شریعتی (جنوب به شمال)، نرسیده به پل صدر، بالاتر از پمپ
+                  بنزین، پلاک ۱۶۹۸، طبقه هفتم
                 </p>
               </div>
             </div>
@@ -105,22 +136,28 @@ export default function ContactPage() {
               <MapWrapper />
             </div>
           </div>
-
         </div>
 
         {/* بخش پایانی: چرا تراست */}
         <div className="mt-16 bg-secondary/30 border border-border rounded-3xl p-8 lg:p-12 text-center">
-          <h2 className="text-2xl font-bold text-foreground mb-4">چرا به تراست اعتماد کنیم؟</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-4">
+            چرا به تراست اعتماد کنیم؟
+          </h2>
           <p className="text-muted-foreground max-w-4xl mx-auto leading-relaxed mb-8">
-            تراست نماد اطمینان در خرید است. ما روی اصالت کالا و کیفیت بی‌نظیر تمرکز داریم. از عطرهای ماندگار تا محصولات روتین پوستی، همگی از معتبرترین برندها گلچین شده‌اند تا با خیالی آسوده و با دریافت مشاوره رایگان، خریدی مقرون‌به‌صرفه، سریع و با بسته‌بندی کاملاً ایمن را تجربه کنید.
+            تراست نماد اطمینان در خرید است. ما روی اصالت کالا و کیفیت بی‌نظیر
+            تمرکز داریم. از عطرهای ماندگار تا محصولات روتین پوستی، همگی از
+            معتبرترین برندها گلچین شده‌اند تا با خیالی آسوده و با دریافت مشاوره
+            رایگان، خریدی مقرون‌به‌صرفه، سریع و با بسته‌بندی کاملاً ایمن را
+            تجربه کنید.
           </p>
-          
+
           <div className="flex flex-wrap justify-center gap-6 mb-8">
             <div className="flex items-center gap-2 bg-background border border-border px-4 py-2 rounded-full text-sm font-medium">
               <ShieldCheck className="size-4 text-gold" /> تضمین اصالت کالا
             </div>
             <div className="flex items-center gap-2 bg-background border border-border px-4 py-2 rounded-full text-sm font-medium">
-              <HeartHandshake className="size-4 text-gold" /> مشاوره تخصصی رایگان
+              <HeartHandshake className="size-4 text-gold" /> مشاوره تخصصی
+              رایگان
             </div>
           </div>
 
@@ -130,7 +167,6 @@ export default function ContactPage() {
             </Button>
           </Link>
         </div>
-
       </div>
     </div>
   );
