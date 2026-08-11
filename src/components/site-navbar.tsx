@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation"; // 🌟 usePathname اضافه شد
 import { useDispatch, useSelector } from "react-redux";
@@ -36,10 +37,10 @@ export function SiteNavbar() {
   const router = useRouter();
   const pathname = usePathname(); // 🌟 دریافت مسیر فعلی
   const dispatch = useDispatch();
-  
+
   // 🌟 تشخیص اینکه آیا کاربر در صفحات ادمین است؟
   const isAdminRoute = pathname?.startsWith("/admin");
-  
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(false);
@@ -47,7 +48,9 @@ export function SiteNavbar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [dbCategories, setDbCategories] = useState<any[]>([]);
 
-  const cartItemCount = useSelector((state: RootState) => selectCartItemCount(state));
+  const cartItemCount = useSelector((state: RootState) =>
+    selectCartItemCount(state),
+  );
 
   useEffect(() => {
     async function fetchCategories() {
@@ -69,19 +72,20 @@ export function SiteNavbar() {
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl transition-all">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-8">
-        
         {/* بخش لوگو - کلیک روی آن کاربر را به سایت اصلی برمی‌گرداند */}
         <Link
           href="/"
           className="flex items-center gap-3"
           onClick={() => setMenuOpen(false)}
         >
-          <span className="text-2xl font-bold tracking-tight gold-gradient-text">
-            TRUST
-          </span>
-          <span className="hidden text-sm text-muted-foreground sm:inline">
-            تراست
-          </span>
+          <Image
+            src="/logo-transparent.png" // مسیر دقیق فایل شما در پوشه public
+            alt="لوگوی تراست بیوتی"
+            width={130} // چون عکس شما مربعی است، طول و عرض را برابر می‌دهیم
+            height={130}
+            className="object-contain rounded-lg" // گرد کردن گوشه‌ها برای زیبایی بیشتر
+            priority // 🌟 لود سریع و اولویت‌دار عکس
+          />
         </Link>
 
         {/* منوی دسکتاپ */}
@@ -119,36 +123,42 @@ export function SiteNavbar() {
                   aria-haspopup="true"
                 >
                   دسته‌بندی‌ها
-                  <ChevronDown className={`size-4 transition-transform ${categoriesOpen ? "rotate-180" : ""}`} />
+                  <ChevronDown
+                    className={`size-4 transition-transform ${categoriesOpen ? "rotate-180" : ""}`}
+                  />
                 </button>
 
                 {categoriesOpen && (
                   <div className="absolute right-0 top-full z-50 pt-4">
                     <div className="w-72 rounded-2xl border border-border bg-card p-3 shadow-[0_24px_80px_-20px_rgba(11,17,32,0.85)] max-h-[75vh] overflow-y-auto flex flex-col custom-scrollbar">
                       {dbCategories.map((category) => (
-                        <div key={category.id} className="mb-2 flex flex-col last:mb-0">
+                        <div
+                          key={category.id}
+                          className="mb-2 flex flex-col last:mb-0"
+                        >
                           <Link
-                            href={`/shop?category=${category.id}`} 
+                            href={`/shop?category=${category.id}`}
                             className="rounded-xl px-4 py-2.5 text-sm font-bold text-foreground transition-colors hover:bg-secondary/80 hover:text-gold"
                             onClick={() => setCategoriesOpen(false)}
                           >
                             {category.name}
                           </Link>
-                          {category.children && category.children.length > 0 && (
-                            <ul className="mt-1 flex flex-col space-y-0.5 border-r-2 border-border/40 me-5 pe-2">
-                              {category.children.map((child: any) => (
-                                <li key={child.id}>
-                                  <Link
-                                    href={`/shop?category=${child.id}`} 
-                                    className="block rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary/50 hover:text-gold"
-                                    onClick={() => setCategoriesOpen(false)}
-                                  >
-                                    {child.name}
-                                  </Link>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
+                          {category.children &&
+                            category.children.length > 0 && (
+                              <ul className="mt-1 flex flex-col space-y-0.5 border-r-2 border-border/40 me-5 pe-2">
+                                {category.children.map((child: any) => (
+                                  <li key={child.id}>
+                                    <Link
+                                      href={`/shop?category=${child.id}`}
+                                      className="block rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary/50 hover:text-gold"
+                                      onClick={() => setCategoriesOpen(false)}
+                                    >
+                                      {child.name}
+                                    </Link>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
                         </div>
                       ))}
                     </div>
@@ -168,7 +178,11 @@ export function SiteNavbar() {
             aria-label="جستجو"
             onClick={() => setIsSearchOpen(!isSearchOpen)}
           >
-            {isSearchOpen ? <X className="size-5 text-gold" /> : <Search className="size-5" />}
+            {isSearchOpen ? (
+              <X className="size-5 text-gold" />
+            ) : (
+              <Search className="size-5" />
+            )}
           </Button>
 
           <Link href="/profile" passHref>
@@ -196,7 +210,7 @@ export function SiteNavbar() {
               </span>
             )}
           </Button>
-          
+
           <Button
             size="icon"
             variant="ghost"
@@ -213,7 +227,10 @@ export function SiteNavbar() {
       {/* پنل کادر جستجو */}
       {isSearchOpen && (
         <div className="absolute top-full left-0 right-0 border-b border-border bg-card/95 backdrop-blur-md p-4 shadow-xl animate-in slide-in-from-top-4 fade-in duration-200">
-          <form onSubmit={handleSearch} className="mx-auto flex max-w-3xl items-center gap-3">
+          <form
+            onSubmit={handleSearch}
+            className="mx-auto flex max-w-3xl items-center gap-3"
+          >
             <input
               type="text"
               autoFocus
@@ -222,7 +239,11 @@ export function SiteNavbar() {
               placeholder="جستجوی نام یا مدل محصول..."
               className="flex-1 rounded-xl border border-border bg-background px-4 py-3 text-sm focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold"
             />
-            <Button type="submit" disabled={!searchQuery.trim()} className="rounded-xl bg-gold text-[#0a0f1c] px-6 py-3 font-bold hover:bg-yellow-500">
+            <Button
+              type="submit"
+              disabled={!searchQuery.trim()}
+              className="rounded-xl bg-gold text-[#0a0f1c] px-6 py-3 font-bold hover:bg-yellow-500"
+            >
               بگرد
             </Button>
           </form>
@@ -233,7 +254,6 @@ export function SiteNavbar() {
       {menuOpen && (
         <div className="border-t border-border bg-background md:hidden shadow-lg absolute w-full max-h-[calc(100vh-80px)] overflow-y-auto">
           <nav className="mx-auto max-w-7xl space-y-1 px-5 py-4 sm:px-8">
-            
             {isAdminRoute ? (
               // --- 🌟 منوی موبایل برای حالت ادمین ---
               <>
@@ -245,8 +265,8 @@ export function SiteNavbar() {
                     key={item.label}
                     href={item.href}
                     className={`block rounded-xl px-3 py-2.5 text-sm transition-colors ${
-                      pathname === item.href 
-                        ? "bg-gold/10 text-gold font-bold" 
+                      pathname === item.href
+                        ? "bg-gold/10 text-gold font-bold"
                         : "text-foreground/80 hover:bg-secondary hover:text-gold"
                     }`}
                     onClick={() => setMenuOpen(false)}
@@ -254,9 +274,9 @@ export function SiteNavbar() {
                     {item.label}
                   </Link>
                 ))}
-                
+
                 <div className="my-2 border-t border-border/50"></div>
-                
+
                 <Link
                   href="/"
                   className="flex items-center gap-2 block rounded-xl px-3 py-2.5 text-sm font-bold text-gold transition-colors hover:bg-gold/10"
@@ -294,7 +314,9 @@ export function SiteNavbar() {
                   aria-expanded={mobileCategoriesOpen}
                 >
                   دسته‌بندی‌ها
-                  <ChevronDown className={`size-4 transition-transform ${mobileCategoriesOpen ? "rotate-180" : ""}`} />
+                  <ChevronDown
+                    className={`size-4 transition-transform ${mobileCategoriesOpen ? "rotate-180" : ""}`}
+                  />
                 </button>
 
                 {mobileCategoriesOpen && (
@@ -302,7 +324,7 @@ export function SiteNavbar() {
                     {dbCategories.map((category) => (
                       <div key={category.id}>
                         <Link
-                          href={`/shop?category=${category.id}`} 
+                          href={`/shop?category=${category.id}`}
                           className="text-sm font-semibold text-foreground transition-colors hover:text-gold"
                           onClick={() => setMenuOpen(false)}
                         >
@@ -313,7 +335,7 @@ export function SiteNavbar() {
                             {category.children.map((child: any) => (
                               <li key={child.id}>
                                 <Link
-                                  href={`/shop?category=${child.id}`} 
+                                  href={`/shop?category=${child.id}`}
                                   className="text-sm text-muted-foreground transition-colors hover:text-gold"
                                   onClick={() => setMenuOpen(false)}
                                 >

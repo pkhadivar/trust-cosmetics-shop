@@ -5,6 +5,7 @@ import { CategoriesSection } from "@/components/categories-section";
 import { ProductShowcase } from "@/components/product-showcase";
 import { BrandShowcase } from "@/components/brand-showcase";
 
+export const dynamic = "force-dynamic";
 export default async function Page() {
   // دریافت لیست برندها از دیتابیس برای نمایش در لندینگ
   const brands = await prisma.brand.findMany({
@@ -17,10 +18,10 @@ export default async function Page() {
       <HeroSection />
       <FeaturesGrid />
       <CategoriesSection />
-      
+
       {/* نوار نمایش برندها */}
       <BrandShowcase brands={brands} />
-      
+
       <ProductShowcase />
     </div>
   );
