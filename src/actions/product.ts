@@ -9,10 +9,10 @@ import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
 
 const s3Client = new S3Client({
   region: "default",
-  endpoint: process.env.LIARA_ENDPOINT as string,
+  endpoint: process.env.S3_ENDPOINT as string,
   credentials: {
-    accessKeyId: process.env.LIARA_ACCESS_KEY as string,
-    secretAccessKey: process.env.LIARA_SECRET_KEY as string,
+    accessKeyId: process.env.S3_ACCESS_KEY as string,
+    secretAccessKey: process.env.S3_SECRET_KEY as string,
   },
 });
 
@@ -36,7 +36,7 @@ async function deleteMediaFromS3(url: string) {
   try {
     await s3Client.send(
       new DeleteObjectCommand({
-        Bucket: process.env.LIARA_BUCKET_NAME,
+        Bucket: process.env.S3_BUCKET,
         Key: key,
       }),
     );
