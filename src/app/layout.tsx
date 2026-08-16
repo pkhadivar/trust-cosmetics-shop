@@ -9,6 +9,8 @@ import { CampaignBanner } from "@/components/campaign-banner";
 import { PwaInstallBanner } from "@/components/pwa-install-banner";
 import "./globals.css";
 
+export const dynamic = "force-dynamic";
+
 const vazirmatn = Vazirmatn({
   variable: "--font-vazirmatn",
   subsets: ["arabic", "latin"],
