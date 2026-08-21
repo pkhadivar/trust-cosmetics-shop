@@ -22,13 +22,14 @@ function formatPrice(amount: number): string {
 
 export function CartDrawer() {
   const dispatch = useDispatch();
-  const isOpen = useSelector((state: RootState) => selectIsCartDrawerOpen(state));
+  const isOpen = useSelector((state: RootState) =>
+    selectIsCartDrawerOpen(state),
+  );
   const items = useSelector((state: RootState) => selectCartItems(state));
   const total = useSelector((state: RootState) => selectCartTotal(state));
-
+  const baseUrl = process.env.NEXT_PUBLIC_MEDIA_BASE_URL || "";
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";
-
     return () => {
       document.body.style.overflow = "";
     };
@@ -90,87 +91,94 @@ export function CartDrawer() {
             </div>
           ) : (
             <ul className="space-y-4">
-              {items.map(({ product, quantity }) => (
-                <li
-                  key={product.id}
-                  className="flex gap-4 rounded-2xl border border-border bg-background/60 p-3"
-                >
-                  <div className="relative size-20 shrink-0 overflow-hidden rounded-xl bg-secondary/40">
-                    {/* اصلاح مسیر تصویر به آرایه دیتابیس واقعی */}
-                    <Image
-                      src={product.images?.[0] || "/placeholder.jpg"}
-                      alt={product.title}
-                      fill
-                      className="object-contain p-2"
-                    />
-                  </div>
+              {items.map(({ product, quantity }) => {
+                const productImages = product.images as string[] | undefined;
+                const activePrice = product.discountedPrice ?? product.price;
 
-                  <div className="flex min-w-0 flex-1 flex-col">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        {/* اصلاح نام فیلد محصول به عنوان واقعی دیتابیس */}
-                        <h3 className="truncate text-sm font-semibold">
-                          {product.title}
-                        </h3>
-                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                          {product.subtitle}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        className="shrink-0 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                        aria-label={`حذف ${product.title} از سبد خرید`}
-                        onClick={() => dispatch(removeFromCart(product.id))}
-                      >
-                        <Trash2 className="size-4" />
-                      </button>
+                const rawImage = productImages?.[0];
+                const imgSrc = rawImage
+                  ? rawImage.startsWith("http")
+                    ? rawImage
+                    : `${baseUrl}/${rawImage}`
+                  : "/placeholder.jpg";
+
+                return (
+                  <li
+                    key={product.id}
+                    className="flex gap-4 rounded-2xl border border-border bg-background/60 p-3"
+                  >
+                    <div className="relative size-20 shrink-0 overflow-hidden rounded-xl bg-secondary/40">
+                      <Image
+                        src={imgSrc || "/placeholder.jpg"}
+                        alt={product.title}
+                        fill
+                        className="object-contain p-2"
+                      />
                     </div>
 
-                    <div className="mt-auto flex items-center justify-between gap-3 pt-3">
-                      <div className="inline-flex items-center rounded-xl border border-border bg-secondary/60">
+                    <div className="flex min-w-0 flex-1 flex-col">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <h3 className="truncate text-sm font-semibold">
+                            {product.title}
+                          </h3>
+                          <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                            {product.subtitle}
+                          </p>
+                        </div>
                         <button
                           type="button"
-                          className="flex size-8 items-center justify-center rounded-s-xl text-foreground/80 transition-colors hover:bg-gold hover:text-primary-foreground"
-                          aria-label="کاهش تعداد"
-                          onClick={() =>
-                            dispatch(
-                              updateQuantity({
-                                productId: product.id,
-                                quantity: quantity - 1,
-                              }),
-                            )
-                          }
+                          className="shrink-0 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                          aria-label={`حذف ${product.title} از سبد خرید`}
+                          onClick={() => dispatch(removeFromCart(product.id))}
                         >
-                          <Minus className="size-3.5" />
+                          <Trash2 className="size-4" />
                         </button>
-                        <span className="min-w-8 text-center text-sm font-medium">
-                          {quantity.toLocaleString("fa-IR")}
+                      </div>
+
+                      <div className="mt-auto flex items-center justify-between gap-3 pt-3">
+                        <div className="inline-flex items-center rounded-xl border border-border bg-secondary/60">
+                          <button
+                            type="button"
+                            className="flex size-8 items-center justify-center rounded-s-xl text-foreground/80 transition-colors hover:bg-gold hover:text-primary-foreground"
+                            onClick={() =>
+                              dispatch(
+                                updateQuantity({
+                                  productId: product.id,
+                                  quantity: quantity - 1,
+                                }),
+                              )
+                            }
+                          >
+                            <Minus className="size-3.5" />
+                          </button>
+                          <span className="min-w-8 text-center text-sm font-medium">
+                            {quantity.toLocaleString("fa-IR")}
+                          </span>
+                          <button
+                            type="button"
+                            className="flex size-8 items-center justify-center rounded-e-xl text-foreground/80 transition-colors hover:bg-gold hover:text-primary-foreground"
+                            onClick={() =>
+                              dispatch(
+                                updateQuantity({
+                                  productId: product.id,
+                                  quantity: quantity + 1,
+                                }),
+                              )
+                            }
+                          >
+                            <Plus className="size-3.5" />
+                          </button>
+                        </div>
+
+                        <span className="text-sm font-bold text-gold">
+                          {formatPrice(activePrice * quantity)}
                         </span>
-                        <button
-                          type="button"
-                          className="flex size-8 items-center justify-center rounded-e-xl text-foreground/80 transition-colors hover:bg-gold hover:text-primary-foreground"
-                          aria-label="افزایش تعداد"
-                          onClick={() =>
-                            dispatch(
-                              updateQuantity({
-                                productId: product.id,
-                                quantity: quantity + 1,
-                              }),
-                            )
-                          }
-                        >
-                          <Plus className="size-3.5" />
-                        </button>
                       </div>
-
-                      {/* نمایش قیمت محاسبه شده بر اساس قیمت اصلی یا تخفیف خورده محصول */}
-                      <span className="text-sm font-bold text-gold">
-                        {formatPrice((product.discountedPrice ?? product.price) * quantity)}
-                      </span>
                     </div>
-                  </div>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

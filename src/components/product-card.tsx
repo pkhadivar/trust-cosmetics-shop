@@ -7,6 +7,7 @@ import { Plus, Heart, Loader2, Ban, Minus, Trash2 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
+import { getMediaUrl } from "@/utils/media";
 
 // 🌟 استفاده از اکشن‌های موجود در فایل ریداکس شما
 import {
@@ -116,7 +117,7 @@ export function ProductCard({
     setIsPending(false);
   };
 
-  const displayImage = product.images?.[0] || "/placeholder.jpg";
+  const displayImage = getMediaUrl(product.images?.[0]);
 
   return (
     <div
