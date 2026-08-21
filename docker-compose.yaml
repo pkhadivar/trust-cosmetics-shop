@@ -9,6 +9,10 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 
+    #IMPORTANT Remove this before deploy on production server
+    # ports:
+    #   - "5432:5432"
+
     volumes:
       - ./data/postgres/data:/var/lib/postgresql/data
 
@@ -48,6 +52,11 @@ services:
 
     # DO NOT expose 9000/9001 publicly.
     # Nginx accesses MinIO through the Docker network.
+
+    #IMPORTANT Remove this before deploy on production server
+    # ports:
+    #   - "9000:9000"
+    #   - "9001:9001"
 
     healthcheck:
       test:

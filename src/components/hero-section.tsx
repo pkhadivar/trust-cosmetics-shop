@@ -6,30 +6,44 @@ import { prisma } from "@/lib/prisma";
 export async function HeroSection() {
   // ۱. دریافت تعداد واقعی محصولات موجود از دیتابیس
   const productCount = await prisma.product.count({
-    where: { isAvailable: true }
+    where: { isAvailable: true },
   });
 
   // ۲. دریافت محصول ویژه برای هدر (با استفاده از فیلد isFeatured)
   const heroProduct = await prisma.product.findFirst({
-    where: { 
+    where: {
       isFeatured: true,
-      isAvailable: true 
+      isAvailable: true,
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
   });
 
+  // مدیریت ایمن آرایه تصاویر (برای جلوگیری از خطای TypeScript در فیلدهای JSON پریزما)
+  const images = heroProduct?.images as string[] | undefined;
+  const baseUrl = process.env.NEXT_PUBLIC_MEDIA_BASE_URL || "";
+  const rawImage = images?.[0];
+
+  const fullImageUrl = rawImage
+    ? rawImage.startsWith("http")
+      ? rawImage
+      : `${baseUrl}/${rawImage}`
+    : "https://placehold.co/600x800/1A2235/D4AF37/png?text=Trust+Product";
   // مقادیر Fallback به همراه اضافه شدن فیلد discountedPrice
   const displayProduct = {
     id: heroProduct?.id || "fallback-id",
     title: heroProduct?.title || "کرم خاویار تراست اسمارت",
     price: heroProduct?.price || 7470000,
     discountedPrice: heroProduct?.discountedPrice || null,
-    imageUrl: heroProduct?.images?.[0] || "https://placehold.co/600x800/1A2235/D4AF37/png?text=Trust+Product", 
+    imageUrl: fullImageUrl,
   };
 
   // محاسبه درصد تخفیف (در صورت وجود)
-  const discountPercent = displayProduct.discountedPrice 
-    ? Math.round(((displayProduct.price - displayProduct.discountedPrice) / displayProduct.price) * 100)
+  const discountPercent = displayProduct.discountedPrice
+    ? Math.round(
+        ((displayProduct.price - displayProduct.discountedPrice) /
+          displayProduct.price) *
+          100,
+      )
     : 0;
 
   return (
@@ -40,12 +54,13 @@ export async function HeroSection() {
 
       <div className="mx-auto max-w-7xl px-5 sm:px-8 relative z-10">
         <div className="flex flex-col-reverse lg:flex-row items-center gap-16 lg:gap-8">
-          
           {/* بخش راست: متون و دکمه‌ها */}
           <div className="w-full lg:w-1/2 flex flex-col text-right">
             <div className="inline-flex items-center gap-2 self-end lg:self-start rounded-full border border-gold/20 bg-gold/10 px-4 py-1.5 mb-8">
               <Star className="size-4 text-gold fill-gold" />
-              <span className="text-sm font-medium text-gold">مجموعه لاکچری ۱۴۰۵</span>
+              <span className="text-sm font-medium text-gold">
+                مجموعه لاکچری ۱۴۰۵
+              </span>
             </div>
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
@@ -54,7 +69,9 @@ export async function HeroSection() {
             </h1>
 
             <p className="text-muted-foreground/80 text-lg leading-relaxed mb-10 max-w-lg lg:ml-auto">
-              ترکیبی از علم و طبیعت؛ محصولات تراست با فرمولاسیون اختصاصی و تاییدیه پزشکان متخصص، درخششی بی‌نظیر به پوست و موی شما هدیه می‌دهند.
+              ترکیبی از علم و طبیعت؛ محصولات تراست با فرمولاسیون اختصاصی و
+              تاییدیه پزشکان متخصص، درخششی بی‌نظیر به پوست و موی شما هدیه
+              می‌دهند.
             </p>
 
             <div className="flex flex-wrap items-center gap-4 mb-16 justify-end lg:justify-start">
@@ -83,7 +100,9 @@ export async function HeroSection() {
               </div>
               <div>
                 <div className="text-3xl font-bold text-gold mb-1">+۹۸٪</div>
-                <div className="text-sm text-muted-foreground">رضایت مشتریان</div>
+                <div className="text-sm text-muted-foreground">
+                  رضایت مشتریان
+                </div>
               </div>
               <div>
                 <div className="text-3xl font-bold text-gold mb-1">+۷</div>
@@ -100,7 +119,7 @@ export async function HeroSection() {
               href={`/products/${displayProduct.id}`}
               className="group/hero-img block relative w-full max-w-md aspect-[4/5]"
             >
-              {/* بج درصد تخفیف (در صورت وجود تخفیف نمایش داده می‌شود) */}
+              {/* بج درصد تخفیف */}
               {discountPercent > 0 && (
                 <div className="absolute top-4 right-4 z-30 rounded-full bg-emerald-500 px-4 py-1.5 text-sm font-bold text-white shadow-[0_2px_15px_rgba(16,185,129,0.4)]">
                   {discountPercent}٪ تخفیف
@@ -108,13 +127,10 @@ export async function HeroSection() {
               )}
 
               <div className="absolute inset-0 bg-[#050810] rounded-3xl shadow-2xl overflow-hidden opacity-90 group-hover/hero-img:opacity-100 transition-all duration-500 flex items-center justify-center p-6 sm:p-10">
-                
-                {/* هاله نور ملایم */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] bg-gold/10 rounded-full blur-[60px] pointer-events-none z-0" />
-                
-                {/* رندر استاندارد عکس باکیفیت */}
+
                 <Image
-                  src={displayProduct.imageUrl} // 👈 آدرس عکس باکیفیت جدید
+                  src={displayProduct.imageUrl}
                   alt={displayProduct.title}
                   fill
                   className="object-contain object-center drop-shadow-[0_20px_30px_rgba(0,0,0,0.8)] z-10 transition-transform duration-700 group-hover/hero-img:scale-105"
@@ -122,7 +138,7 @@ export async function HeroSection() {
                   unoptimized={true}
                   priority
                 />
-                
+
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent z-20 pointer-events-none" />
               </div>
 
@@ -132,8 +148,7 @@ export async function HeroSection() {
                   <span className="text-white font-bold text-lg transition-colors group-hover/hero-img:text-gold">
                     {displayProduct.title}
                   </span>
-                  
-                  {/* لی‌آوت جدید نمایش قیمت‌ها */}
+
                   <div className="flex flex-col gap-0.5">
                     {displayProduct.discountedPrice && (
                       <span className="text-[13px] font-medium text-white/50 line-through decoration-red-500/80 decoration-2 w-fit">
@@ -141,7 +156,10 @@ export async function HeroSection() {
                       </span>
                     )}
                     <span className="text-gold font-bold text-[15px]">
-                      {Number(displayProduct.discountedPrice || displayProduct.price).toLocaleString("fa-IR")} تومان
+                      {Number(
+                        displayProduct.discountedPrice || displayProduct.price,
+                      ).toLocaleString("fa-IR")}{" "}
+                      تومان
                     </span>
                   </div>
                 </div>
@@ -151,7 +169,6 @@ export async function HeroSection() {
               </div>
             </Link>
           </div>
-
         </div>
       </div>
     </section>

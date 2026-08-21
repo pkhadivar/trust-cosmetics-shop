@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useState } from "react";
 import Link from "next/link";
+import { getMediaUrl } from "@/utils/media"; // 👈 اضافه کردن تابع هلپر
 
 type Brand = {
   id: string;
@@ -13,28 +14,21 @@ export function BrandShowcase({ brands }: { brands: Brand[] }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isPaused, setIsPaused] = useState(false);
 
-  // منطق اسکرول خودکار
   useEffect(() => {
-    // اگر موس روی اسلایدر باشد، حرکت متوقف می‌شود
     if (!scrollRef.current || isPaused) return;
 
     const interval = setInterval(() => {
       if (scrollRef.current) {
         const { scrollWidth, clientWidth, scrollLeft } = scrollRef.current;
-        
-        // محاسبه رسیدن به انتهای لیست (در حالت راست‌چین مرورگرها مقادیر متفاوتی دارند، به همین دلیل از قدر مطلق استفاده می‌کنیم)
         const isAtEnd = Math.abs(scrollLeft) >= scrollWidth - clientWidth - 10;
 
         if (isAtEnd) {
-          // اگر به آخر لیست رسیدیم، به صورت نرم برگرد به اول
           scrollRef.current.scrollTo({ left: 0, behavior: "smooth" });
         } else {
-          // در غیر این صورت به اندازه یک کارت (حدود 340 پیکسل) به جلو اسکرول کن
-          // در سایت‌های فارسی (RTL)، حرکت به جلو با عدد منفی انجام می‌شود
           scrollRef.current.scrollBy({ left: -340, behavior: "smooth" });
         }
       }
-    }, 3000); // سرعت حرکت: هر 3 ثانیه یک بار
+    }, 3000);
 
     return () => clearInterval(interval);
   }, [isPaused]);
@@ -44,10 +38,11 @@ export function BrandShowcase({ brands }: { brands: Brand[] }) {
   return (
     <section className="py-16 w-full bg-background border-y border-border/40 overflow-hidden">
       <div className="max-w-7xl mx-auto px-5">
-        
         {/* بخش عناوین */}
         <div className="text-center mb-10 space-y-2">
-          <h2 className="text-2xl md:text-3xl font-bold text-foreground">برندهای ما</h2>
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+            برندهای ما
+          </h2>
           <p className="text-lg md:text-xl text-muted-foreground font-medium">
             انتخاب بر اساس برند
           </p>
@@ -56,12 +51,12 @@ export function BrandShowcase({ brands }: { brands: Brand[] }) {
         {/* کانتینر اسلایدر برندها */}
         <div
           ref={scrollRef}
-          onMouseEnter={() => setIsPaused(true)} // توقف اسکرول با آمدن موس
-          onMouseLeave={() => setIsPaused(false)} // ادامه اسکرول با رفتن موس
-          onTouchStart={() => setIsPaused(true)} // توقف با لمس انگشت (برای موبایل)
-          onTouchEnd={() => setIsPaused(false)} // ادامه پس از لمس (برای موبایل)
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+          onTouchStart={() => setIsPaused(true)}
+          onTouchEnd={() => setIsPaused(false)}
           className="flex flex-nowrap items-stretch gap-5 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-4 no-scrollbar"
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }} // مخفی کردن نوار اسکرول برای زیبایی بیشتر
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
           {brands.map((brand) => (
             <Link
@@ -74,12 +69,15 @@ export function BrandShowcase({ brands }: { brands: Brand[] }) {
               <div className="w-full h-36 md:h-44 relative rounded-xl overflow-hidden mb-4 bg-background/50 flex items-center justify-center border border-border/30">
                 {brand.logo ? (
                   <img
-                    src={brand.logo}
+                    /* 👈 پردازش امن آدرس لوگو با تابع getMediaUrl */
+                    src={getMediaUrl(brand.logo)}
                     alt={brand.name}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                 ) : (
-                  <span className="text-muted-foreground text-sm">بدون تصویر</span>
+                  <span className="text-muted-foreground text-sm">
+                    بدون تصویر
+                  </span>
                 )}
               </div>
 
@@ -90,7 +88,6 @@ export function BrandShowcase({ brands }: { brands: Brand[] }) {
             </Link>
           ))}
         </div>
-
       </div>
     </section>
   );

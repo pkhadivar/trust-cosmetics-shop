@@ -5,7 +5,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
-import { Minus, Plus, Trash2, Loader2, MapPin, AlertCircle } from "lucide-react";
+import {
+  Minus,
+  Plus,
+  Trash2,
+  Loader2,
+  MapPin,
+  AlertCircle,
+} from "lucide-react";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 
@@ -18,17 +25,18 @@ import {
 } from "@/store/cartSlice";
 import type { RootState } from "@/store/store";
 import { createOrderAndPay } from "@/actions/payment";
-import { getStoreSettings } from "@/actions/settings"; // دریافت اکشن تنظیمات
+import { getStoreSettings } from "@/actions/settings";
 
 function formatPrice(amount: number): string {
   return `${amount.toLocaleString("fa-IR")} تومان`;
 }
 
 export default function CartPage() {
+  const baseUrl = process.env.NEXT_PUBLIC_MEDIA_BASE_URL || "";
   const router = useRouter();
   const dispatch = useDispatch();
   const { data: session, status } = useSession();
-  
+
   const items = useSelector((state: RootState) => selectCartItems(state));
   const total = useSelector((state: RootState) => selectCartTotal(state));
 
@@ -36,13 +44,17 @@ export default function CartPage() {
   const [addresses, setAddresses] = useState<any[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string>("");
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
-  const [shippingCost, setShippingCost] = useState<number>(0); // استیت هزینه ارسال
+  const [shippingCost, setShippingCost] = useState<number>(50000); // مقدار پیش‌فرض مطمئن
 
   useEffect(() => {
-    // دریافت هزینه پست از دیتابیس
-    getStoreSettings().then((settings) => {
-      setShippingCost(settings.shippingCost || 50000);
-    });
+    // دریافت امن هزینه پست از دیتابیس
+    getStoreSettings()
+      .then((settings) => {
+        if (settings?.shippingCost !== undefined) {
+          setShippingCost(settings.shippingCost);
+        }
+      })
+      .catch((err) => console.error("Error fetching store settings:", err));
 
     // واکشی آدرس‌های کاربر در صورت لاگین بودن
     if (status === "authenticated") {
@@ -63,7 +75,7 @@ export default function CartPage() {
   const handleCheckout = () => {
     if (status === "unauthenticated") {
       toast.error("برای ثبت سفارش لطفاً ابتدا وارد حساب کاربری خود شوید.");
-      router.push("/login?callbackUrl=/cart"); 
+      router.push("/login?callbackUrl=/cart");
       return;
     }
 
@@ -77,6 +89,7 @@ export default function CartPage() {
       quantity: item.quantity,
     }));
 
+    // دسترسی امن‌تر به آیدی یوزر
     const userId = (session?.user as any)?.id;
 
     if (!userId) {
@@ -85,18 +98,20 @@ export default function CartPage() {
     }
 
     startTransition(async () => {
-      const result = await createOrderAndPay({
-        userId: userId,
-        addressId: selectedAddressId,
-        cartItems: formattedItems,
-      });
+      try {
+        const result = await createOrderAndPay({
+          userId: userId,
+          addressId: selectedAddressId,
+          cartItems: formattedItems,
+        });
 
-      if (result.success && result.url) {
-        // کامنت شده تا در صورت انصراف کاربر، سبد خرید خالی نشود
-        //dispatch(clearCart());
-        window.location.href = result.url; 
-      } else {
-        toast.error(result.error || "خطایی در اتصال به درگاه رخ داد.");
+        if (result.success && result.url) {
+          window.location.href = result.url;
+        } else {
+          toast.error(result.error || "خطایی در اتصال به درگاه رخ داد.");
+        }
+      } catch (error) {
+        toast.error("ارتباط با سرور برقرار نشد.");
       }
     });
   };
@@ -114,7 +129,7 @@ export default function CartPage() {
           <div className="mt-14 rounded-3xl border border-border bg-card px-6 py-16 text-center shadow-sm">
             <p className="text-muted-foreground">سبد خرید شما خالی است.</p>
             <Link
-              href="/#products"
+              href="/shop"
               className="mt-6 inline-flex h-11 items-center justify-center rounded-xl bg-gold px-6 text-sm font-semibold text-[#0a0f1c] transition-colors hover:bg-yellow-500"
             >
               بازگشت به فروشگاه
@@ -124,7 +139,15 @@ export default function CartPage() {
           <div className="mt-14 space-y-8">
             <ul className="space-y-4">
               {items.map(({ product, quantity }) => {
+                const productImages = product.images as string[] | undefined;
                 const activePrice = product.discountedPrice ?? product.price;
+
+                const rawImage = productImages?.[0];
+                const imgSrc = rawImage
+                  ? rawImage.startsWith("http")
+                    ? rawImage
+                    : `${baseUrl}/${rawImage}`
+                  : "/placeholder.jpg";
 
                 return (
                   <li
@@ -133,7 +156,7 @@ export default function CartPage() {
                   >
                     <div className="relative mx-auto size-28 shrink-0 overflow-hidden rounded-2xl bg-[#050810] border border-border sm:mx-0">
                       <Image
-                        src={product.images?.[0] || "/placeholder.jpg"}
+                        src={imgSrc || "/placeholder.jpg"}
                         alt={product.title}
                         fill
                         className="object-contain p-2"
@@ -141,11 +164,13 @@ export default function CartPage() {
                     </div>
 
                     <div className="min-w-0 flex-1 text-center sm:text-right">
-                      <h2 className="text-lg font-bold text-foreground">{product.title}</h2>
+                      <h2 className="text-lg font-bold text-foreground">
+                        {product.title}
+                      </h2>
                       <p className="mt-1 text-sm text-muted-foreground line-clamp-1">
                         {product.subtitle}
                       </p>
-                      
+
                       <div className="mt-3 flex flex-col sm:items-start gap-1">
                         {product.discountedPrice && (
                           <span className="text-xs text-muted-foreground line-through decoration-red-500/50">
@@ -163,7 +188,14 @@ export default function CartPage() {
                         <button
                           type="button"
                           className="flex size-10 items-center justify-center rounded-r-xl transition-colors hover:bg-gold hover:text-[#0a0f1c]"
-                          onClick={() => dispatch(updateQuantity({ productId: product.id, quantity: quantity + 1 }))}
+                          onClick={() =>
+                            dispatch(
+                              updateQuantity({
+                                productId: product.id,
+                                quantity: quantity + 1,
+                              }),
+                            )
+                          }
                         >
                           <Plus className="size-4" />
                         </button>
@@ -173,7 +205,14 @@ export default function CartPage() {
                         <button
                           type="button"
                           className="flex size-10 items-center justify-center rounded-l-xl transition-colors hover:bg-gold hover:text-[#0a0f1c]"
-                          onClick={() => dispatch(updateQuantity({ productId: product.id, quantity: Math.max(1, quantity - 1) }))}
+                          onClick={() =>
+                            dispatch(
+                              updateQuantity({
+                                productId: product.id,
+                                quantity: Math.max(1, quantity - 1),
+                              }),
+                            )
+                          }
                         >
                           <Minus className="size-4" />
                         </button>
@@ -199,11 +238,14 @@ export default function CartPage() {
                   <MapPin className="size-5 text-gold" />
                   انتخاب آدرس ارسال
                 </h3>
-                
+
                 {status === "unauthenticated" ? (
                   <div className="flex items-center gap-3 bg-secondary/50 p-4 rounded-xl border border-border">
                     <AlertCircle className="size-5 text-gold shrink-0" />
-                    <p className="text-sm text-foreground/80">برای ثبت سفارش و انتخاب آدرس، لطفاً ابتدا وارد حساب کاربری خود شوید.</p>
+                    <p className="text-sm text-foreground/80">
+                      برای ثبت سفارش و انتخاب آدرس، لطفاً ابتدا وارد حساب کاربری
+                      خود شوید.
+                    </p>
                   </div>
                 ) : isLoadingAddresses ? (
                   <div className="flex justify-center py-6">
@@ -211,34 +253,45 @@ export default function CartPage() {
                   </div>
                 ) : addresses.length === 0 ? (
                   <div className="bg-secondary/30 p-5 rounded-xl border border-dashed border-border text-center">
-                    <p className="text-sm text-muted-foreground mb-3">شما هنوز آدرسی در سیستم ثبت نکرده‌اید.</p>
-                    <Link href="/profile" className="inline-flex text-xs font-bold text-[#0a0f1c] bg-gold px-4 py-2 rounded-lg hover:bg-yellow-500 transition-colors">
+                    <p className="text-sm text-muted-foreground mb-3">
+                      شما هنوز آدرسی در سیستم ثبت نکرده‌اید.
+                    </p>
+                    <Link
+                      href="/profile"
+                      className="inline-flex text-xs font-bold text-[#0a0f1c] bg-gold px-4 py-2 rounded-lg hover:bg-yellow-500 transition-colors"
+                    >
                       ثبت آدرس جدید در پروفایل
                     </Link>
                   </div>
                 ) : (
                   <div className="grid gap-3">
                     {addresses.map((addr) => (
-                      <label 
-                        key={addr.id} 
+                      <label
+                        key={addr.id}
                         className={`flex items-start cursor-pointer gap-4 p-4 rounded-2xl border transition-all ${
-                          selectedAddressId === addr.id ? 'border-gold bg-gold/5 shadow-[0_0_15px_rgba(212,175,55,0.1)]' : 'border-border bg-secondary/20 hover:border-gold/40'
+                          selectedAddressId === addr.id
+                            ? "border-gold bg-gold/5 shadow-[0_0_15px_rgba(212,175,55,0.1)]"
+                            : "border-border bg-secondary/20 hover:border-gold/40"
                         }`}
                       >
-                        <input 
-                          type="radio" 
-                          name="address" 
-                          value={addr.id} 
-                          checked={selectedAddressId === addr.id} 
-                          onChange={() => setSelectedAddressId(addr.id)} 
-                          className="mt-1.5 size-4 accent-gold shrink-0" 
+                        <input
+                          type="radio"
+                          name="address"
+                          value={addr.id}
+                          checked={selectedAddressId === addr.id}
+                          onChange={() => setSelectedAddressId(addr.id)}
+                          className="mt-1.5 size-4 accent-gold shrink-0"
                         />
                         <div className="flex flex-col">
-                          <span className="font-bold text-sm text-foreground">{addr.title}</span>
+                          <span className="font-bold text-sm text-foreground">
+                            {addr.title}
+                          </span>
                           <span className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
                             {addr.state}، {addr.city} - {addr.fullAddress}
                           </span>
-                          <span className="text-xs text-muted-foreground/70 mt-1">کد پستی: <span dir="ltr">{addr.postalCode}</span></span>
+                          <span className="text-xs text-muted-foreground/70 mt-1">
+                            کد پستی: <span dir="ltr">{addr.postalCode}</span>
+                          </span>
                         </div>
                       </label>
                     ))}
@@ -246,7 +299,7 @@ export default function CartPage() {
                 )}
               </div>
 
-              {/* محاسبه فاکتور نهایی به صورت داینامیک */}
+              {/* محاسبه فاکتور نهایی */}
               {(() => {
                 const finalShippingCost = total >= 4000000 ? 0 : shippingCost;
                 const finalPayable = total + finalShippingCost;
@@ -255,33 +308,48 @@ export default function CartPage() {
                   <>
                     <div className="flex flex-col gap-3 mb-6">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">مجموع کالاها ({items.length} آیتم)</span>
-                        <span className="font-medium text-foreground">{formatPrice(total)}</span>
+                        <span className="text-muted-foreground">
+                          مجموع کالاها ({items.length} آیتم)
+                        </span>
+                        <span className="font-medium text-foreground">
+                          {formatPrice(total)}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">هزینه ارسال</span>
+                        <span className="text-muted-foreground">
+                          هزینه ارسال
+                        </span>
                         <span className="font-medium text-gold">
-                          {total >= 4000000 
-                            ? "رایگان (سفارش بالای ۴ میلیون تومان)" 
+                          {total >= 4000000
+                            ? "رایگان (سفارش بالای ۴ میلیون تومان)"
                             : formatPrice(finalShippingCost)}
                         </span>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between border-t border-border/50 pt-5 mb-6">
-                      <span className="font-bold text-foreground">مبلغ قابل پرداخت</span>
+                      <span className="font-bold text-foreground">
+                        مبلغ قابل پرداخت
+                      </span>
                       <span className="text-2xl font-black text-gold drop-shadow-md">
                         {formatPrice(finalPayable)}
                       </span>
                     </div>
 
                     <Button
-                      disabled={isPending || status === "unauthenticated" || addresses.length === 0 || !selectedAddressId}
+                      disabled={
+                        isPending ||
+                        status === "unauthenticated" ||
+                        addresses.length === 0 ||
+                        !selectedAddressId
+                      }
                       className="h-14 w-full bg-gold text-base font-bold text-[#0a0f1c] hover:bg-yellow-500 transition-all rounded-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                       onClick={handleCheckout}
                     >
                       {isPending && <Loader2 className="size-5 animate-spin" />}
-                      {isPending ? "در حال اتصال به درگاه بانکی..." : "پرداخت و ثبت سفارش"}
+                      {isPending
+                        ? "در حال اتصال به درگاه بانکی..."
+                        : "پرداخت و ثبت سفارش"}
                     </Button>
                   </>
                 );

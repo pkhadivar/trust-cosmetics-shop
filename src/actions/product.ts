@@ -7,28 +7,38 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { z } from "zod";
 import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
 
+// 🌟 ۱. اصلاح کلاینت دقیقاً مشابه فایل upload.ts
 const s3Client = new S3Client({
-  region: "default",
-  endpoint: process.env.S3_ENDPOINT as string,
+  region: "us-east-1",
+  endpoint: "http://minio:9000",
   credentials: {
-    accessKeyId: process.env.S3_ACCESS_KEY as string,
-    secretAccessKey: process.env.S3_SECRET_KEY as string,
+    accessKeyId: process.env.MINIO_ROOT_USER as string,
+    secretAccessKey: process.env.MINIO_ROOT_PASSWORD as string,
   },
+  forcePathStyle: true,
 });
 
-// تابع کمکی برای استخراج مسیر دقیق فایل از لینک کامل
-// مثلاً تبدیل: https://media.trustbeautystore.ir/uploads/vid.mp4 ---> uploads/vid.mp4
+// 🌟 ۲. اصلاح تابع استخراج نام فایل
 function getS3KeyFromUrl(url: string) {
   if (!url || url.includes("placeholder")) return null;
+
   try {
-    const urlObj = new URL(url);
-    return decodeURIComponent(urlObj.pathname.substring(1));
+    // اگر لینک کامل پاس داده شده بود (برای اطمینان)
+    if (url.startsWith("http")) {
+      const urlObj = new URL(url);
+      const parts = urlObj.pathname.split("/");
+      // فقط بخش آخر (نام فایل) را برمی‌گردانیم
+      return decodeURIComponent(parts[parts.length - 1]);
+    }
+
+    // چون در دیتابیس فقط نام فایل (مثل sync-123.webp) ذخیره شده، مستقیماً همان را برمی‌گردانیم
+    return url;
   } catch (e) {
     return null;
   }
 }
 
-// تابع کمکی برای حذف فیزیکی فایل از فضای ابری
+// 🌟 ۳. تابع حذف بدون تغییرات خاصی (فقط اضافه کردن لاگ موفقیت)
 async function deleteMediaFromS3(url: string) {
   const key = getS3KeyFromUrl(url);
   if (!key) return;
@@ -40,6 +50,7 @@ async function deleteMediaFromS3(url: string) {
         Key: key,
       }),
     );
+    console.log(`✅ فایل با موفقیت از فضای ابری حذف شد: ${key}`);
   } catch (error) {
     console.error(`❌ خطا در حذف فایل از S3 (${key}):`, error);
   }
