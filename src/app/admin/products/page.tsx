@@ -109,7 +109,7 @@ export default async function AdminProductsPage({
                     <td className="p-4">
                       <div className="w-14 h-14 bg-[#050810] border border-border rounded-xl overflow-hidden flex items-center justify-center p-1 shrink-0">
                         <img
-                          src={product.images[0] || "/placeholder.jpg"}
+                          src={imgSrc || "/placeholder.jpg"}
                           className="w-full h-full object-contain"
                           alt={product.title}
                         />
