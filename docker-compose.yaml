@@ -27,7 +27,7 @@ services:
       - backend
 
   minio:
-    image: quay.io/minio/minio
+    image: cgr.dev/chainguard/minio
     container_name: minio
     restart: unless-stopped
 
@@ -73,7 +73,7 @@ services:
       - backend
 
   minio-init:
-    image: quay.io/minio/mc
+    image: cgr.dev/chainguard/minio-client
     container_name: minio-init
 
     depends_on:
